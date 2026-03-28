@@ -216,3 +216,8 @@
 - [x] Verify server chat route exists and works — confirmed
 - [x] Natural language draw detection — "draw me X", "paint me X", "sketch X" etc. auto-triggers image generation
 - [x] Settings Test Voice button now uses Edge TTS (en-US-GuyNeural) instead of old expo-speech
+
+## Critical Fixes (v5.4)
+- [x] Fix Vex system prompt — added IMAGE GENERATION section, Vex now knows he CAN draw and never refuses
+- [x] Fix chat scroll — paddingBottom 120, scrollEventThrottle 16, proper KAV offset for iOS
+- [x] Verify draw flow works end-to-end — natural language detection + server route confirmed

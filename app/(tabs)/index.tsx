@@ -983,8 +983,8 @@ export default function ChatScreen() {
       {/* Chat area — must account for absolute-positioned tab bar */}
       <KeyboardAvoidingView
         style={styles.flex}
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
-        keyboardVerticalOffset={0}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={Platform.OS === "ios" ? insets.top + 60 : 0}
       >
         <FlatList
           ref={flatListRef}
@@ -1000,14 +1000,21 @@ export default function ChatScreen() {
           )}
           contentContainerStyle={styles.messageList}
           onContentSizeChange={() => {
-            if (!showScrollBtn) flatListRef.current?.scrollToEnd({ animated: false });
+            if (!showScrollBtn) flatListRef.current?.scrollToEnd({ animated: true });
+          }}
+          onLayout={() => {
+            flatListRef.current?.scrollToEnd({ animated: false });
           }}
           onScroll={(e) => {
             const { layoutMeasurement, contentOffset, contentSize } = e.nativeEvent;
             const distFromBottom = contentSize.height - contentOffset.y - layoutMeasurement.height;
             setShowScrollBtn(distFromBottom > 120);
           }}
-          scrollEventThrottle={100}
+          scrollEventThrottle={16}
+          removeClippedSubviews={false}
+          initialNumToRender={20}
+          maxToRenderPerBatch={10}
+          windowSize={10}
           ListFooterComponent={isLoading ? <TypingIndicator /> : null}
           showsVerticalScrollIndicator={false}
         />
@@ -1040,7 +1047,7 @@ export default function ChatScreen() {
         )}
 
         {/* Input area — always-visible send, compact icon toolbar below */}
-        <View style={[styles.inputArea, { paddingBottom: Math.max(insets.bottom + 82, 90) }]}>
+        <View style={[styles.inputArea, { paddingBottom: Math.max(insets.bottom + 72, 80) }]}>
 
           {/* Status bar — recording / transcribing / uploading */}
           {(isRecording || isTranscribing || isUploadingImage || isUploadingFile || isGeneratingImage) && (
@@ -1418,7 +1425,7 @@ const styles = StyleSheet.create({
   coinToastText: { color: C.neon, fontSize: 13, fontWeight: "900", fontFamily: MONO },
 
   // Messages
-  messageList: { paddingHorizontal: 14, paddingTop: 16, paddingBottom: 20 },
+  messageList: { paddingHorizontal: 14, paddingTop: 16, paddingBottom: 120 },
   messageRow: { flexDirection: "row", marginBottom: 16, alignItems: "flex-end" },
   vexRow: { justifyContent: "flex-start" },
   userRow: { justifyContent: "flex-end" },
