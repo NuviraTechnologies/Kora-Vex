@@ -221,3 +221,9 @@
 - [x] Fix Vex system prompt — added IMAGE GENERATION section, Vex now knows he CAN draw and never refuses
 - [x] Fix chat scroll — paddingBottom 120, scrollEventThrottle 16, proper KAV offset for iOS
 - [x] Verify draw flow works end-to-end — natural language detection + server route confirmed
+
+## Full Layout Rebuild (v5.5)
+- [x] Chat messages disappear when keyboard opens — fixed: removed height behavior on Android, use pan mode
+- [x] Rebuild layout: KAV behavior=undefined on Android, softwareKeyboardLayoutMode=pan in app.config
+- [x] Images in chat: fixed to 260x260 so they’re always clearly visible
+- [x] No more tiny trapped window — FlatList fills all available space

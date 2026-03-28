@@ -980,11 +980,11 @@ export default function ChatScreen() {
       {/* Coin Toast */}
       {lastEarnReason && <CoinToast key={lastEarnReason + coins} reason={lastEarnReason} />}
 
-      {/* Chat area — must account for absolute-positioned tab bar */}
+      {/* Chat area — fills remaining space, input stays above keyboard */}
       <KeyboardAvoidingView
         style={styles.flex}
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        keyboardVerticalOffset={Platform.OS === "ios" ? insets.top + 60 : 0}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        keyboardVerticalOffset={Platform.OS === "ios" ? insets.top + 72 : 0}
       >
         <FlatList
           ref={flatListRef}
@@ -1046,7 +1046,7 @@ export default function ChatScreen() {
           </View>
         )}
 
-        {/* Input area — always-visible send, compact icon toolbar below */}
+        {/* Input area — pinned to bottom, never collapses the message list */}
         <View style={[styles.inputArea, { paddingBottom: Math.max(insets.bottom + 72, 80) }]}>
 
           {/* Status bar — recording / transcribing / uploading */}
@@ -1450,8 +1450,8 @@ const styles = StyleSheet.create({
   vexBubbleColumn: { alignItems: "flex-start" },
   userBubbleColumn: { alignItems: "flex-end" },
   messageImage: {
-    width: "100%",
-    height: 200,
+    width: 260,
+    height: 260,
     borderRadius: 14,
     borderWidth: 1.5,
     borderColor: C.neon,
