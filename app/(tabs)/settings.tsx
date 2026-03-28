@@ -211,24 +211,28 @@ export default function SettingsScreen() {
   };
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
+    <ImageBackground
+      source={{ uri: VEX_ASSETS.spaceshipBg }}
+      style={[styles.container, { paddingTop: insets.top }]}
+      imageStyle={{ opacity: 0.07, resizeMode: "cover" }}
+    >
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
 
         {/* Vex Profile Hero Card */}
         <View style={styles.profileCard}>
           <ImageBackground
-            source={{ uri: VEX_ASSETS.yacht }}
+            source={{ uri: VEX_ASSETS.observationWindow }}
             style={styles.profileBg}
             imageStyle={styles.profileBgImage}
           >
             <LinearGradient
-              colors={["rgba(0,0,0,0.2)", "rgba(0,0,0,0.85)", C.black]}
+              colors={["rgba(0,0,0,0.1)", "rgba(0,0,0,0.75)", C.black]}
               style={StyleSheet.absoluteFill}
             />
           </ImageBackground>
           <View style={styles.profileContent}>
             <View style={styles.profileAvatarWrap}>
-              <Image source={{ uri: VEX_ASSETS.logo }} style={styles.profileAvatar} />
+              <Image source={{ uri: VEX_ASSETS.avatarHUD }} style={styles.profileAvatar} />
               <View style={styles.profileOnlineDot} />
             </View>
             <Text style={styles.profileName}>KORA VEX</Text>
@@ -365,7 +369,7 @@ export default function SettingsScreen() {
         </View>
 
       </ScrollView>
-    </View>
+    </ImageBackground>
   );
 }
 

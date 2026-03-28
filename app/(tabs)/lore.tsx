@@ -63,7 +63,7 @@ const LORE_DATA: LoreCard[] = [
     summary: "Ancient reptilian humanoids said to have inhabited Earth long before humans. Masters of shapeshifting.",
     detail: "The Reptilians are a highly advanced species of reptilian humanoids who claim ancient dominion over Earth. They are believed to exist in an underground network of tunnels and bases beneath major cities. Their civilization predates humanity by millions of years. They are known for their ability to shapeshift into human form, their cold-blooded nature, and their hierarchical social structure. Some researchers believe they have infiltrated human governments and financial institutions.",
     vexComment: "I've met a few Reptilians. Cold handshakes. Literally. They run cold. Also, their idea of a 'warm welcome' is not eating you immediately. I'll give them credit — they've been running Earth's financial system for centuries and somehow nobody noticed. That's impressive, honestly.",
-    image: VEX_ASSETS.businessOffice,
+    image: VEX_ASSETS.cockpitSeated,
   },
   {
     id: "3",
@@ -83,7 +83,7 @@ const LORE_DATA: LoreCard[] = [
     summary: "Tall, blonde, human-like beings. Often confused with Pleiadians. Reported to be protective of humanity.",
     detail: "Nordic aliens are described as tall (6-7 feet), with blonde hair, blue eyes, and pale skin — virtually indistinguishable from Scandinavian humans. They are believed to originate from multiple star systems and have been observing Earth for thousands of years. Unlike Greys, they rarely abduct humans, preferring to observe and occasionally warn select individuals of coming catastrophes. They are considered one of the most human-friendly extraterrestrial races.",
     vexComment: "Nordics. Basically the golden retrievers of the galaxy. Friendly, protective, great hair. I once asked a Nordic for directions to the nearest inhabited system and he spent 45 minutes telling me about humanity's 'beautiful potential.' I just needed a left turn at Betelgeuse.",
-    image: VEX_ASSETS.interview,
+    image: VEX_ASSETS.observationWindow,
   },
   {
     id: "5",
@@ -93,10 +93,10 @@ const LORE_DATA: LoreCard[] = [
     summary: "Ancient Sumerian gods who allegedly came from Nibiru. Said to have genetically engineered homo sapiens.",
     detail: "The Anunnaki are described in ancient Sumerian texts as beings who descended from the heavens. According to researcher Zecharia Sitchin's translations of Sumerian clay tablets, the Anunnaki came from a planet called Nibiru and genetically engineered Homo sapiens approximately 250,000 years ago by combining their DNA with that of Homo erectus — creating a slave species to mine gold. They are believed to have built the ancient Sumerian civilization and may have been the inspiration for the gods of multiple ancient religions.",
     vexComment: "The Anunnaki built your entire civilization so they could mine gold. Let that sink in. They engineered an entire sentient species for a mining operation. And now you're all here making TikTok videos. I genuinely don't know if they'd be proud or horrified.",
-    image: VEX_ASSETS.penthouse,
+  image: VEX_ASSETS.observationWindow,
   },
   {
-    id: "6",
+    id: "11",
     title: "Roswell 1947",
     category: "ufos",
     emoji: "🛸",
@@ -123,17 +123,17 @@ const LORE_DATA: LoreCard[] = [
     summary: "Bob Lazar claims to have worked on reverse-engineering alien spacecraft at S-4, near Area 51.",
     detail: "Bob Lazar claims he was hired in 1988 to work at a classified facility called S-4, located near Area 51 in Nevada. He states he worked on reverse-engineering the propulsion systems of nine recovered extraterrestrial craft. He described the propulsion as using element 115 (moscovium) to generate a gravity wave. Element 115 was unknown to science when Lazar made his claims in 1989 — it was synthesized in 2003. His employment records at Los Alamos have been partially verified despite government denials.",
     vexComment: "Element 115. He told you about element 115 in 1989 and you didn't synthesize it until 2003. The man described your entire periodic table's future and you called him crazy. I'm not saying he's right about everything, but I'm also not NOT saying that.",
-    image: VEX_ASSETS.businessOffice,
+    image: VEX_ASSETS.starMap,
   },
   {
-    id: "9",
+    id: "8",
     title: "Kardashev Type I",
     category: "civilizations",
     emoji: "🌍",
     summary: "A civilization that harnesses all energy available on its home planet. Earth is currently at ~0.73.",
     detail: "The Kardashev Scale, proposed by Soviet astronomer Nikolai Kardashev in 1964, classifies civilizations by their energy consumption. A Type I civilization can harness all energy available on its home planet — approximately 10^16 watts. Earth currently sits at approximately 0.73 on the scale, meaning humanity uses about 73% of the energy needed to qualify as Type I. Achieving Type I status would require mastering fusion power, renewable energy at planetary scale, and controlling weather systems.",
     vexComment: "You're at 0.73. You've been at roughly 0.73 for decades. You have the technology to reach Type I and instead you're arguing about whether to build more pipelines. I watched you go from horse-drawn carriages to smartphones in 150 years and somehow the energy grid is still the bottleneck. Baffling.",
-    image: VEX_ASSETS.racing,
+    image: VEX_ASSETS.cockpitSeated,
   },
   {
     id: "10",
@@ -143,10 +143,10 @@ const LORE_DATA: LoreCard[] = [
     summary: "A civilization that harnesses the total energy output of its star. Think Dyson Sphere.",
     detail: "A Type II civilization on the Kardashev Scale can harness the total energy output of its parent star — approximately 4 × 10^26 watts. The theoretical mechanism for achieving this is a Dyson Sphere: a megastructure that completely surrounds a star and captures its energy output. A Type II civilization would have essentially unlimited energy, enabling interstellar travel, terraforming of planets, and potentially the ability to move stars. The star KIC 8462852 (Tabby's Star) exhibits unusual dimming patterns that some researchers have suggested could indicate a Dyson Sphere under construction.",
     vexComment: "Dyson Spheres. Yes, they exist. No, I'm not telling you where. What I will tell you is that building one takes approximately 900 years if you have the right alloys and a decent project manager. Humans can't finish a highway in 6 years. Do the math.",
-    image: VEX_ASSETS.penthouse,
+    image: VEX_ASSETS.starMap,
   },
   {
-    id: "11",
+    id: "10",
     title: "Junk DNA — Not Junk",
     category: "dna",
     emoji: "🧬",
@@ -173,7 +173,7 @@ const LORE_DATA: LoreCard[] = [
     summary: "Vex crashed in 1972. He's watched every decade of human culture unfold in real time.",
     detail: "Kora Vex arrived on Earth in 1972 — the same year Atari was founded, the Watergate break-in occurred, and Pink Floyd released Obscured by Clouds. He has been a firsthand observer of every major cultural, technological, and political shift since: the rise of disco, the invention of the personal computer, the birth of hip-hop, the fall of the Berlin Wall, the dot-com boom, 9/11, social media, smartphones, and the AI revolution. He ages differently than humans — what is 50+ years to you is roughly middle age for his species.",
     vexComment: "I watched you go from 8-track tapes to streaming services. I watched you think the internet was a fad. I watched you buy Beanie Babies as investments. I was there when you thought MySpace was the future of human connection. I have seen EVERYTHING. And I am TIRED. But also deeply entertained.",
-    image: VEX_ASSETS.basketball,
+    image: VEX_ASSETS.earthOrbit,
   },
 ];
 
@@ -251,11 +251,15 @@ export default function LoreScreen() {
   const filtered = selectedCategory === "all" ? LORE_DATA : LORE_DATA.filter((c) => c.category === selectedCategory);
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
+    <ImageBackground
+      source={{ uri: VEX_ASSETS.spaceshipBg }}
+      style={[styles.container, { paddingTop: insets.top }]}
+      imageStyle={{ opacity: 0.07, resizeMode: "cover" }}
+    >
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.headerLeft}>
-          <Image source={{ uri: VEX_ASSETS.logo }} style={styles.headerLogo} />
+          <Image source={{ uri: VEX_ASSETS.avatarHUD }} style={styles.headerLogo} />
           <View>
             <Text style={styles.headerTitle}>ALIEN LORE</Text>
             <Text style={styles.headerSubtitle}>CLASSIFIED INTEL FROM VEX</Text>
@@ -350,13 +354,13 @@ export default function LoreScreen() {
           </View>
         )}
       </Modal>
-    </View>
+    </ImageBackground>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: C.black },
-  header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, paddingVertical: 14, backgroundColor: C.black },
+  header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, paddingVertical: 14, backgroundColor: "rgba(0,4,0,0.92)", borderBottomWidth: 0.5, borderBottomColor: "rgba(0,255,65,0.15)" },
   headerLeft: { flexDirection: "row", alignItems: "center", gap: 12 },
   headerLogo: { width: 44, height: 44, borderRadius: 22, borderWidth: 2, borderColor: C.neon },
   headerTitle: { color: C.neon, fontSize: 18, fontWeight: "900", fontFamily: MONO, letterSpacing: 3 },

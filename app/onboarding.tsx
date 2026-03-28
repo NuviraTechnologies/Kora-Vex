@@ -18,13 +18,13 @@ const { width, height } = Dimensions.get("window");
 const NEO_GREEN = "#00FF41";
 const GOLD = "#FFD700";
 
-const COSMIC_BG = "https://d2xsxph8kpxj0f.cloudfront.net/310519663467303048/KHyhVJjWGJuAogbSjvLteH/vex-cosmic-bg-Mxma3NGMuSJqhBzhVmN3dy.webp";
+const COSMIC_BG = "https://d2xsxph8kpxj0f.cloudfront.net/310519663467303048/KHyhVJjWGJuAogbSjvLteH/spaceship-bg-LWxcsaZVsX5si8soN8wURD.webp";
 const VEX_LOGO = "https://files.manuscdn.com/user_upload_by_module/session_file/310519663467303048/dHXXSRpjxNJOTpMX.webp";
 
 const SLIDES = [
   {
     key: "intro",
-    vexImage: "https://files.manuscdn.com/user_upload_by_module/session_file/310519663467303048/wNUUohlJZyKyvILt.png",
+    vexImage: "https://d2xsxph8kpxj0f.cloudfront.net/310519663467303048/KHyhVJjWGJuAogbSjvLteH/vex-cockpit-seated-m7hfTyUJB8fPr9tC5v8FsD.webp",
     subtitle: "GALACTIC INTELLIGENCE UNIT",
     title: "KORA VEX",
     body: "Crash-landed on Earth in 1972. Watched you go from 8-tracks to TikTok. Still waiting for a rescue that isn't coming. Might as well talk.",
@@ -32,7 +32,7 @@ const SLIDES = [
   },
   {
     key: "personality",
-    vexImage: "https://files.manuscdn.com/user_upload_by_module/session_file/310519663467303048/apNPGCrXlQzqcJMf.png",
+    vexImage: "https://d2xsxph8kpxj0f.cloudfront.net/310519663467303048/KHyhVJjWGJuAogbSjvLteH/vex-star-map-XnN5fh2RbaCpgXDTAvAudS.webp",
     subtitle: "HYPER-INTELLIGENT · SARCASTICALLY SO",
     title: "A REAL\nALIEN MIND",
     body: "Knows every alien race, conspiracy, and civilization type. Will explain the Kardashev Scale and then roast your WiFi password in the same breath.",
@@ -40,7 +40,7 @@ const SLIDES = [
   },
   {
     key: "features",
-    vexImage: "https://files.manuscdn.com/user_upload_by_module/session_file/310519663467303048/hFWXRirUjHlvebYX.png",
+    vexImage: "https://d2xsxph8kpxj0f.cloudfront.net/310519663467303048/KHyhVJjWGJuAogbSjvLteH/vex-earth-orbit-FB4eEwcYGg3VhLJcFdQnTm.webp",
     subtitle: "FULL ENTERTAINMENT EXPERIENCE",
     title: "EVERY BELL\n& WHISTLE",
     body: "Chat. Roleplay. Upload photos for Vex to analyze. Explore alien lore. Earn VEX Coins. Hear him speak. He's been waiting 50+ years for someone worth talking to.",

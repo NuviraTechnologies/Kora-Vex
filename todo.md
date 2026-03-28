@@ -154,3 +154,13 @@
 - [x] Fix mic recording stop/URI pattern
 - [x] Final TypeScript check + all tests passing (25/25, 0 TS errors)
 - [x] Final checkpoint saved
+
+## Cosmic Spaceship Upgrade (v4.0)
+- [x] Generate unified Vex character image set (consistent face, cosmic/spaceship settings)
+- [x] Generate spaceship cockpit UI background art
+- [x] Upload all new images to CDN, update vex-assets.ts
+- [x] Rebuild UI with spaceship cockpit aesthetic (holographic panels, star maps, tech HUD)
+- [x] Expand Vex system prompt with real astronomical knowledge (NASA, exoplanets, black holes, cosmology)
+- [x] Update all Vex photos in onboarding, chat, lore, settings to new consistent set
+- [x] Final TypeScript check + tests
+- [x] Checkpoint saved

@@ -235,7 +235,8 @@ function MessageBubble({
     >
       {isVex && (
         <View style={styles.typingAvatarWrap}>
-          <Image source={{ uri: VEX_ASSETS.logo }} style={styles.vexAvatar} />
+          <Image source={{ uri: VEX_ASSETS.avatarHUD }} style={styles.vexAvatar} />
+          <View style={styles.avatarGlow} />
         </View>
       )}
       <View style={[styles.bubbleColumn, isVex ? styles.vexBubbleColumn : styles.userBubbleColumn]}>
@@ -739,20 +740,37 @@ export default function ChatScreen() {
 
   if (!isInitialized) {
     return (
-      <View style={styles.loadingContainer}>
-        <Image source={{ uri: VEX_ASSETS.logo }} style={styles.loadingLogo} />
+      <ImageBackground
+        source={{ uri: VEX_ASSETS.spaceshipBg }}
+        style={styles.loadingContainer}
+        imageStyle={{ opacity: 0.22, resizeMode: "cover" }}
+      >
+        <LinearGradient
+          colors={["rgba(0,0,0,0.85)", "rgba(0,5,0,0.92)"]}
+          style={StyleSheet.absoluteFill}
+        />
         <View style={styles.loadingGlow} />
+        <Image source={{ uri: VEX_ASSETS.avatarHUD }} style={styles.loadingLogo} />
         <ActivityIndicator size="large" color={C.neon} style={{ marginTop: 28 }} />
         <Text style={styles.loadingText}>ESTABLISHING CONTACT</Text>
         <Text style={styles.loadingSubtext}>Tuning alien frequencies...</Text>
-      </View>
+        {/* HUD corner accents */}
+        <View style={styles.hudCornerTL} />
+        <View style={styles.hudCornerTR} />
+        <View style={styles.hudCornerBL} />
+        <View style={styles.hudCornerBR} />
+      </ImageBackground>
     );
   }
 
   const currentModeInfo = ROLEPLAY_MODES[currentMode] || ROLEPLAY_MODES["normal"];
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
+    <ImageBackground
+      source={{ uri: VEX_ASSETS.spaceshipBg }}
+      style={[styles.container, { paddingTop: insets.top }]}
+      imageStyle={{ opacity: 0.08, resizeMode: "cover" }}
+    >
 
       {/* Premium Header */}
       <View style={styles.header}>
@@ -1025,7 +1043,7 @@ export default function ChatScreen() {
           </View>
         </Pressable>
       </Modal>
-    </View>
+    </ImageBackground>
   );
 }
 
@@ -1081,7 +1099,9 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingHorizontal: 16,
     paddingVertical: 12,
-    backgroundColor: C.black,
+    backgroundColor: "rgba(0,4,0,0.92)",
+    borderBottomWidth: 0.5,
+    borderBottomColor: "rgba(0,255,65,0.15)",
   },
   headerLeft: { flexDirection: "row", alignItems: "center", flex: 1 },
   avatarContainer: { position: "relative", width: 48, height: 48 },
@@ -1276,7 +1296,7 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   vexBubble: {
-    backgroundColor: C.surface,
+    backgroundColor: "rgba(1,12,1,0.88)",
     borderWidth: 1.5,
     borderColor: C.neonDim,
     borderRadius: 18,
@@ -1285,8 +1305,8 @@ const styles = StyleSheet.create({
     paddingVertical: 11,
     shadowColor: C.neon,
     shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.15,
-    shadowRadius: 6,
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
   },
   userBubble: {
     backgroundColor: C.neon,
@@ -1391,9 +1411,9 @@ const styles = StyleSheet.create({
 
   // Input area
   inputArea: {
-    backgroundColor: C.black,
+    backgroundColor: "rgba(0,4,0,0.94)",
     borderTopWidth: 1,
-    borderTopColor: C.surface,
+    borderTopColor: "rgba(0,255,65,0.2)",
     paddingTop: 10,
     paddingHorizontal: 14,
   },
@@ -1562,5 +1582,47 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.25,
     shadowRadius: 8,
+  },
+
+  // HUD corner accents for spaceship aesthetic
+  hudCornerTL: {
+    position: "absolute" as const,
+    top: 40,
+    left: 20,
+    width: 20,
+    height: 20,
+    borderTopWidth: 2,
+    borderLeftWidth: 2,
+    borderColor: C.neon,
+  },
+  hudCornerTR: {
+    position: "absolute" as const,
+    top: 40,
+    right: 20,
+    width: 20,
+    height: 20,
+    borderTopWidth: 2,
+    borderRightWidth: 2,
+    borderColor: C.neon,
+  },
+  hudCornerBL: {
+    position: "absolute" as const,
+    bottom: 100,
+    left: 20,
+    width: 20,
+    height: 20,
+    borderBottomWidth: 2,
+    borderLeftWidth: 2,
+    borderColor: C.neon,
+  },
+  hudCornerBR: {
+    position: "absolute" as const,
+    bottom: 100,
+    right: 20,
+    width: 20,
+    height: 20,
+    borderBottomWidth: 2,
+    borderRightWidth: 2,
+    borderColor: C.neon,
   },
 });

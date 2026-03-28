@@ -1,5 +1,6 @@
 // Kora Vex Brand Assets — CDN URLs
 // All images uploaded to CDN for use throughout the app UI
+// v4.0: Unified cosmic/spaceship character set — consistent Vex look across all images
 
 export const VEX_ASSETS = {
   // Main logo — alien head with gaming headset (neon green on black) — PRIMARY BRAND ICON
@@ -8,31 +9,30 @@ export const VEX_ASSETS = {
   // VEX Coin — circular coin with alien headset logo
   coin: "https://files.manuscdn.com/user_upload_by_module/session_file/310519663467303048/DEHBNVUQKeOJMCUl.jpeg",
 
-  // Vex character photos — for use in UI backgrounds, cards, onboarding
+  // === COSMIC SPACESHIP SERIES (v4.0) — Consistent character, all in spacecraft ===
+
+  // Vex in command chair of alien spacecraft cockpit — holographic displays, Milky Way visible
+  cockpitSeated: "https://d2xsxph8kpxj0f.cloudfront.net/310519663467303048/KHyhVJjWGJuAogbSjvLteH/vex-cockpit-seated-m7hfTyUJB8fPr9tC5v8FsD.webp",
+
+  // Vex at observation window looking at nebula — arms crossed, smug expression
+  observationWindow: "https://d2xsxph8kpxj0f.cloudfront.net/310519663467303048/KHyhVJjWGJuAogbSjvLteH/vex-observation-window-Gj5aJMmE8WszPDHPVH6NpX.webp",
+
+  // Vex at holographic star map — gesturing at galaxy map, teaching pose
+  starMap: "https://d2xsxph8kpxj0f.cloudfront.net/310519663467303048/KHyhVJjWGJuAogbSjvLteH/vex-star-map-XnN5fh2RbaCpgXDTAvAudS.webp",
+
+  // Vex close-up portrait with HUD elements — for chat avatar use
+  avatarHUD: "https://d2xsxph8kpxj0f.cloudfront.net/310519663467303048/KHyhVJjWGJuAogbSjvLteH/vex-avatar-hud-PyS8T2DkRNEmQQvf2QUS7q.webp",
+
+  // Vex on bridge overlooking Earth from orbit — wide cinematic shot
+  earthOrbit: "https://d2xsxph8kpxj0f.cloudfront.net/310519663467303048/KHyhVJjWGJuAogbSjvLteH/vex-earth-orbit-FB4eEwcYGg3VhLJcFdQnTm.webp",
+
+  // Spaceship cockpit interior — no character, pure environment for backgrounds
+  spaceshipBg: "https://d2xsxph8kpxj0f.cloudfront.net/310519663467303048/KHyhVJjWGJuAogbSjvLteH/spaceship-bg-LWxcsaZVsX5si8soN8wURD.webp",
+
+  // === LEGACY COSMIC (kept for reference) ===
   // Side profile looking up at stars — dramatic, cinematic
   sideProfile: "https://files.manuscdn.com/user_upload_by_module/session_file/310519663467303048/wNUUohlJZyKyvILt.png",
 
   // Back view looking at Milky Way — cosmic, mysterious
   backCosmic: "https://files.manuscdn.com/user_upload_by_module/session_file/310519663467303048/ShvvWzWWIQYyVJka.png",
-
-  // Basketball player — Vex in VEX jersey holding ball
-  basketball: "https://files.manuscdn.com/user_upload_by_module/session_file/310519663467303048/yGBhekTWtyyiVwhX.png",
-
-  // Racing driver — Vex in VEX Racing Team suit with car
-  racing: "https://files.manuscdn.com/user_upload_by_module/session_file/310519663467303048/zFyPmoBOfjFbCtGj.png",
-
-  // Business suit in office — Vex the billionaire CEO
-  businessOffice: "https://files.manuscdn.com/user_upload_by_module/session_file/310519663467303048/apNPGCrXlQzqcJMf.png",
-
-  // Interview — Vex being interviewed with mic
-  interview: "https://files.manuscdn.com/user_upload_by_module/session_file/310519663467303048/qQOhATZMVrllMhHQ.png",
-
-  // Poker — Vex at casino table with chips
-  poker: "https://files.manuscdn.com/user_upload_by_module/session_file/310519663467303048/nigoRUVYEaOwkpEH.png",
-
-  // Penthouse — Vex in luxury suite with city skyline
-  penthouse: "https://files.manuscdn.com/user_upload_by_module/session_file/310519663467303048/IXNHxYucyUWPLniP.png",
-
-  // Yacht — Vex in navy suit with champagne on yacht
-  yacht: "https://files.manuscdn.com/user_upload_by_module/session_file/310519663467303048/hFWXRirUjHlvebYX.png",
 } as const;
