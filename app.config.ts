@@ -39,6 +39,12 @@ const env = {
 };
 
 const config: ExpoConfig = {
+  owner: "richardvigslist",
+  extra: {
+    eas: {
+      projectId: "88a7abdb-8462-4ad7-8490-169c974c3a97",
+    },
+  },
   name: env.appName,
   slug: env.appSlug,
   version: "1.0.0",
