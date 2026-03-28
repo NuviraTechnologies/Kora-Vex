@@ -894,10 +894,10 @@ export default function ChatScreen() {
       {/* Coin Toast */}
       {lastEarnReason && <CoinToast key={lastEarnReason + coins} reason={lastEarnReason} />}
 
-      {/* Chat area */}
+      {/* Chat area — must account for absolute-positioned tab bar */}
       <KeyboardAvoidingView
         style={styles.flex}
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
         keyboardVerticalOffset={0}
       >
         <FlatList
@@ -954,7 +954,7 @@ export default function ChatScreen() {
         )}
 
         {/* Input area — always-visible send, compact icon toolbar below */}
-        <View style={[styles.inputArea, { paddingBottom: Math.max(insets.bottom, 8) }]}>
+        <View style={[styles.inputArea, { paddingBottom: Math.max(insets.bottom + 82, 90) }]}>
 
           {/* Status bar — recording / transcribing / uploading */}
           {(isRecording || isTranscribing || isUploadingImage || isUploadingFile || isGeneratingImage) && (
@@ -983,8 +983,8 @@ export default function ChatScreen() {
               value={inputText}
               onChangeText={setInputText}
               onContentSizeChange={(e) => setInputHeight(e.nativeEvent.contentSize.height + 16)}
-              placeholder="Ask Vex anything..."
-              placeholderTextColor={C.neonFaint}
+              placeholder="Type a message or tap Voice below..."
+              placeholderTextColor="#336633"
               multiline
               maxLength={1500}
               returnKeyType="default"
@@ -1010,44 +1010,49 @@ export default function ChatScreen() {
             <Text style={styles.charCount}>{1500 - inputText.length} chars left</Text>
           )}
 
-          {/* Compact icon-only toolbar */}
+          {/* Toolbar — labeled for first-time users */}
           <View style={styles.inputToolbar}>
-            <Pressable style={({ pressed }) => [styles.toolbarIconBtn, pressed && { opacity: 0.5 }]} onPress={pickImage}>
+            <Pressable style={({ pressed }) => [styles.toolbarLabelBtn, pressed && { opacity: 0.5 }]} onPress={pickImage}>
               <Text style={styles.toolbarIcon}>🖼️</Text>
+              <Text style={styles.toolbarLabel}>Photo</Text>
             </Pressable>
-            <Pressable style={({ pressed }) => [styles.toolbarIconBtn, pressed && { opacity: 0.5 }]} onPress={takePhoto}>
+            <Pressable style={({ pressed }) => [styles.toolbarLabelBtn, pressed && { opacity: 0.5 }]} onPress={takePhoto}>
               <Text style={styles.toolbarIcon}>📷</Text>
+              <Text style={styles.toolbarLabel}>Camera</Text>
             </Pressable>
-            <Pressable style={({ pressed }) => [styles.toolbarIconBtn, pressed && { opacity: 0.5 }]} onPress={pickFile}>
+            <Pressable style={({ pressed }) => [styles.toolbarLabelBtn, pressed && { opacity: 0.5 }]} onPress={pickFile}>
               <Text style={styles.toolbarIcon}>{isUploadingFile ? "⏳" : "📎"}</Text>
+              <Text style={styles.toolbarLabel}>File</Text>
             </Pressable>
             <Pressable
               style={({ pressed }) => [
-                styles.toolbarIconBtn,
+                styles.toolbarLabelBtn,
                 isGeneratingImage && { borderColor: C.neon, borderWidth: 1 },
                 pressed && { opacity: 0.5 },
               ]}
               onPress={askVexToDraw}
             >
               <Text style={styles.toolbarIcon}>{isGeneratingImage ? "⏳" : "🎨"}</Text>
+              <Text style={styles.toolbarLabel}>Draw</Text>
             </Pressable>
             <Pressable
               style={({ pressed }) => [
-                styles.toolbarIconBtn,
+                styles.toolbarLabelBtn,
                 isRecording && { borderColor: C.red, borderWidth: 1, backgroundColor: "#1a0000" },
                 pressed && { opacity: 0.5 },
               ]}
               onPress={toggleRecording}
             >
               <Text style={styles.toolbarIcon}>{isRecording ? "⏹" : "🎤"}</Text>
+              <Text style={[styles.toolbarLabel, isRecording && { color: C.red }]}>{isRecording ? "Stop" : "Voice"}</Text>
             </Pressable>
 
-            {/* Divider */}
+            {/* Spacer */}
             <View style={styles.toolbarDivider} />
 
             <Pressable
               style={({ pressed }) => [
-                styles.toolbarIconBtn,
+                styles.toolbarLabelBtn,
                 voiceEnabled && { borderColor: C.neon, borderWidth: 1 },
                 pressed && { opacity: 0.5 },
               ]}
@@ -1060,6 +1065,7 @@ export default function ChatScreen() {
               }}
             >
               <Text style={styles.toolbarIcon}>{voiceEnabled ? "🔊" : "🔇"}</Text>
+              <Text style={styles.toolbarLabel}>{voiceEnabled ? "Sound" : "Muted"}</Text>
             </Pressable>
           </View>
         </View>
@@ -1331,7 +1337,7 @@ const styles = StyleSheet.create({
   coinToastText: { color: C.neon, fontSize: 13, fontWeight: "900", fontFamily: MONO },
 
   // Messages
-  messageList: { paddingHorizontal: 14, paddingTop: 16, paddingBottom: 12 },
+  messageList: { paddingHorizontal: 14, paddingTop: 16, paddingBottom: 20 },
   messageRow: { flexDirection: "row", marginBottom: 16, alignItems: "flex-end" },
   vexRow: { justifyContent: "flex-start" },
   userRow: { justifyContent: "flex-end" },
@@ -1500,7 +1506,26 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  toolbarIcon: { fontSize: 18 },
+  toolbarLabelBtn: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 6,
+    paddingVertical: 5,
+    borderRadius: 10,
+    backgroundColor: C.surface,
+    minWidth: 44,
+    gap: 2,
+    borderWidth: 1,
+    borderColor: C.border,
+  },
+  toolbarLabel: {
+    color: C.textMid,
+    fontSize: 9,
+    fontFamily: Platform.OS === "ios" ? "Courier New" : "monospace",
+    letterSpacing: 0.5,
+    fontWeight: "700",
+  },
+  toolbarIcon: { fontSize: 16 },
   toolbarDivider: {
     flex: 1,
   },

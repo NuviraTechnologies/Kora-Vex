@@ -195,3 +195,10 @@
 - [x] Update age rating to 13+ (remove "all ages" / "kid-friendly" language)
 - [x] Update app store description and content rating to Teen (13+)
 - [x] Fix duplicate lore IDs causing React key warnings
+
+## Full Chat UI Rebuild (v5.2)
+- [x] Fix input/send button cut off by tab bar on all devices
+- [x] Rebuild layout with correct KeyboardAvoidingView + safe area bottom insets
+- [x] Beginner-friendly: add placeholder hint text, clear send button label
+- [x] Toolbar: labeled buttons (Photo, Camera, File, Draw, Voice, Sound/Muted)
+- [x] Ensure layout works on small phones (5") and large phones (6.7")
