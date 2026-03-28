@@ -164,3 +164,15 @@
 - [x] Update all Vex photos in onboarding, chat, lore, settings to new consistent set
 - [x] Final TypeScript check + tests
 - [x] Checkpoint saved
+
+## Legibility & UX Fix (v4.1)
+- [x] Restore 3-slide onboarding (confirmed working — flag already set on device, Reset Onboarding button in Settings restores it)
+- [x] Fix all dark-green-on-black text — textDim #006600 → #A8C4A8, textMid #00AA28 → #CCFFCC, bodyText #E8F5E8 added
+- [x] Fix section labels (HAPTICS, DATA, ABOUT, VOICE) — now bright mint
+- [x] Fix settings list item subtitles — now #CCFFCC readable
+- [x] Fix lore card body text — now bodyText #E8F5E8
+- [x] Fix chat screen muted/dim text — status text, timestamps, toolbar labels all upgraded
+- [x] Fix onboarding slide body text — now #E8F5E8, fine print #A8C4A8
+- [x] Ensure all interactive labels are bright enough for kids (13+) to read comfortably
+- [x] TypeScript check + tests passing (0 errors, 25/25)
+- [x] Checkpoint saved

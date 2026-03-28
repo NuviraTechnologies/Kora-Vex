@@ -298,8 +298,8 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(0,0,0,0.5)",
   },
   skipText: {
-    color: "#8A9BA8",
-    fontSize: 11,
+    color: "#CCFFCC",
+    fontSize: 12,
     fontWeight: "700",
     letterSpacing: 1.5,
   },
@@ -341,9 +341,9 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   slideBody: {
-    color: "#9AB09A",
-    fontSize: 14,
-    lineHeight: 22,
+    color: "#E8F5E8",
+    fontSize: 15,
+    lineHeight: 24,
     marginBottom: 22,
   },
   dotsRow: {
@@ -355,7 +355,7 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: "#1A2A1A",
+    backgroundColor: "#3A6A3A",
   },
   dotActive: {
     width: 28,
@@ -385,7 +385,7 @@ const styles = StyleSheet.create({
     letterSpacing: 2.5,
   },
   finePrint: {
-    color: "#2A3A2A",
+    color: "#A8C4A8",
     fontSize: 11,
     textAlign: "center",
     letterSpacing: 0.3,

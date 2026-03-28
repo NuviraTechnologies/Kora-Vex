@@ -30,9 +30,11 @@ const C = {
   surface: "#020f02",
   surfaceHigh: "#041804",
   border: "#003300",
-  textDim: "#004400",
-  textMid: "#00AA28",
-  orange: "#FF6600",
+  // Legibility-first colors
+  textDim: "#A8C4A8",    // readable on dark bg
+  textMid: "#CCFFCC",   // bright mint
+  bodyText: "#E8F5E8",  // near-white with green tint
+  orange: "#FF8C00",
   gold: "#FFD700",
 };
 
@@ -386,18 +388,18 @@ const styles = StyleSheet.create({
   profileAvatar: { width: 80, height: 80, borderRadius: 40, borderWidth: 3, borderColor: C.neon, shadowColor: C.neon, shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.6, shadowRadius: 12 },
   profileOnlineDot: { position: "absolute", bottom: 4, right: 4, width: 14, height: 14, borderRadius: 7, backgroundColor: C.neon, borderWidth: 2, borderColor: C.black },
   profileName: { color: C.neon, fontSize: 22, fontWeight: "900", fontFamily: MONO, letterSpacing: 4, textAlign: "center" },
-  profileTitle: { color: C.textDim, fontSize: 11, fontFamily: MONO, letterSpacing: 1, textAlign: "center", marginTop: 4, marginBottom: 10 },
-  profileBio: { color: C.textMid, fontSize: 13, lineHeight: 20, textAlign: "center", fontStyle: "italic", marginBottom: 18 },
+  profileTitle: { color: C.textMid, fontSize: 12, fontFamily: MONO, letterSpacing: 1, textAlign: "center", marginTop: 4, marginBottom: 10 },
+  profileBio: { color: C.bodyText, fontSize: 14, lineHeight: 22, textAlign: "center", fontStyle: "italic", marginBottom: 18 },
   statsRow: { flexDirection: "row", alignItems: "center", justifyContent: "center", backgroundColor: C.surface, borderWidth: 1.5, borderColor: C.border, borderRadius: 16, padding: 16 },
   statItem: { flex: 1, alignItems: "center" },
   statValue: { color: C.neon, fontSize: 20, fontWeight: "900", fontFamily: MONO },
-  statLabel: { color: C.textDim, fontSize: 9, fontFamily: MONO, letterSpacing: 1, marginTop: 2 },
+  statLabel: { color: C.textMid, fontSize: 10, fontFamily: MONO, letterSpacing: 1, marginTop: 2 },
   statDivider: { width: 1, height: 36, backgroundColor: C.border },
 
   // Sections
   section: { paddingHorizontal: 16, marginBottom: 20 },
   sectionHeader: { marginBottom: 8, paddingHorizontal: 4 },
-  sectionTitle: { color: C.textDim, fontSize: 11, fontWeight: "900", fontFamily: MONO, letterSpacing: 2 },
+  sectionTitle: { color: C.textMid, fontSize: 11, fontWeight: "900", fontFamily: MONO, letterSpacing: 2 },
   sectionCard: { backgroundColor: C.surface, borderWidth: 1.5, borderColor: C.border, borderRadius: 18, overflow: "hidden" },
 
   // Rows
@@ -409,19 +411,19 @@ const styles = StyleSheet.create({
   settingRowText: { flex: 1 },
   settingLabel: { color: C.neon, fontSize: 14, fontWeight: "700", fontFamily: MONO },
   settingLabelDanger: { color: "#FF3B30" },
-  settingSubtitle: { color: C.textDim, fontSize: 11, fontFamily: MONO, marginTop: 2 },
-  rowChevron: { color: C.textDim, fontSize: 22, fontWeight: "300" },
+  settingSubtitle: { color: C.textMid, fontSize: 12, fontFamily: MONO, marginTop: 2 },
+  rowChevron: { color: C.textMid, fontSize: 22, fontWeight: "300" },
   rowDivider: { height: 1, backgroundColor: C.border, marginLeft: 64 },
 
   // About rows
   aboutRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, paddingVertical: 14 },
-  aboutLabel: { color: C.textMid, fontSize: 13, fontFamily: MONO },
+  aboutLabel: { color: C.bodyText, fontSize: 13, fontFamily: MONO },
   aboutValue: { color: C.neon, fontSize: 13, fontFamily: MONO, fontWeight: "700" },
 
   // Footer
   footer: { alignItems: "center", paddingHorizontal: 24, paddingTop: 10, paddingBottom: 20, gap: 8 },
   footerLogo: { width: 48, height: 48, borderRadius: 24, borderWidth: 2, borderColor: C.border, opacity: 0.6 },
-  footerText: { color: C.textDim, fontSize: 14, fontWeight: "900", fontFamily: MONO, letterSpacing: 4 },
+  footerText: { color: C.textMid, fontSize: 14, fontWeight: "900", fontFamily: MONO, letterSpacing: 4 },
   footerSubtext: { color: C.textDim, fontSize: 11, fontFamily: MONO, textAlign: "center", lineHeight: 18, fontStyle: "italic" },
-  footerCopy: { color: C.border, fontSize: 9, fontFamily: MONO, letterSpacing: 1, marginTop: 4 },
+  footerCopy: { color: C.textDim, fontSize: 9, fontFamily: MONO, letterSpacing: 1, marginTop: 4 },
 });

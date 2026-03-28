@@ -69,10 +69,12 @@ const C = {
   surfaceHigh: "#041804",
   border: "#003300",
   borderBright: "#00FF41",
-  textDim: "#006600",
-  textMid: "#00AA28",
-  orange: "#FF6600",
-  red: "#FF3333",
+  // Legibility-first: bright enough for kids to read on dark backgrounds
+  textDim: "#A8C4A8",    // was #006600 — now soft light green/gray, readable
+  textMid: "#CCFFCC",   // was #00AA28 — now bright mint, clearly visible
+  bodyText: "#E8F5E8",  // near-white with green tint for body copy
+  orange: "#FF8C00",
+  red: "#FF5555",
   white: "#FFFFFF",
 };
 
@@ -1085,10 +1087,10 @@ const styles = StyleSheet.create({
     fontWeight: "800",
   },
   loadingSubtext: {
-    color: C.textDim,
+    color: C.textMid,
     fontFamily: MONO,
     marginTop: 8,
-    fontSize: 12,
+    fontSize: 13,
     letterSpacing: 1,
   },
 
@@ -1150,7 +1152,7 @@ const styles = StyleSheet.create({
   },
   statusText: {
     color: C.textMid,
-    fontSize: 10,
+    fontSize: 11,
     fontFamily: MONO,
     letterSpacing: 1,
   },
@@ -1241,7 +1243,7 @@ const styles = StyleSheet.create({
     fontFamily: MONO,
   },
   tickerScroll: { flex: 1, overflow: "hidden" },
-  tickerText: { color: C.textMid, fontSize: 11, fontFamily: MONO, letterSpacing: 0.3 },
+  tickerText: { color: C.bodyText, fontSize: 11, fontFamily: MONO, letterSpacing: 0.3 },
 
   // Coin toast
   coinToast: {
@@ -1319,7 +1321,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.4,
     shadowRadius: 8,
   },
-  vexText: { color: C.neon, fontFamily: MONO, fontSize: 14, lineHeight: 22 },
+  vexText: { color: C.bodyText, fontFamily: MONO, fontSize: 14, lineHeight: 23 },
   vexTextBold: { fontWeight: "900", color: "#44FF66" },
   userText: { color: C.black, fontWeight: "700", fontSize: 14, lineHeight: 22 },
 
@@ -1337,7 +1339,7 @@ const styles = StyleSheet.create({
   },
   actionBtnActive: { borderColor: C.neon },
   actionBtnText: { color: C.textMid, fontSize: 11, fontFamily: MONO },
-  timestampText: { color: C.border, fontSize: 10, fontFamily: MONO },
+  timestampText: { color: C.textDim, fontSize: 10, fontFamily: MONO },
 
   // Typing indicator
   typingRow: { flexDirection: "row", alignItems: "flex-end", paddingHorizontal: 14, marginBottom: 12 },
@@ -1362,7 +1364,7 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     backgroundColor: C.neon,
   },
-  typingLabel: { color: C.textDim, fontSize: 10, fontFamily: MONO, letterSpacing: 0.5 },
+  typingLabel: { color: C.textMid, fontSize: 11, fontFamily: MONO, letterSpacing: 0.5 },
 
   // Scroll to bottom
   scrollBtn: {
@@ -1407,7 +1409,7 @@ const styles = StyleSheet.create({
     borderColor: C.neon,
   },
   removePendingImageText: { color: C.neon, fontSize: 12, fontWeight: "900" },
-  pendingImageLabel: { color: C.textDim, fontSize: 11, marginTop: 5, textAlign: "center", fontFamily: MONO },
+  pendingImageLabel: { color: C.textMid, fontSize: 11, marginTop: 5, textAlign: "center", fontFamily: MONO },
 
   // Input area
   inputArea: {
@@ -1436,7 +1438,7 @@ const styles = StyleSheet.create({
   toolbarBtnActive: { borderColor: C.neon, backgroundColor: C.surfaceHigh },
   toolbarBtnRecording: { borderColor: C.red, backgroundColor: "#1a0000" },
   toolbarBtnIcon: { fontSize: 18 },
-  toolbarBtnLabel: { color: C.textDim, fontSize: 9, fontFamily: MONO, letterSpacing: 0.5 },
+  toolbarBtnLabel: { color: C.textMid, fontSize: 9, fontFamily: MONO, letterSpacing: 0.5 },
 
   statusIndicator: {
     flexDirection: "row",
@@ -1456,7 +1458,7 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     backgroundColor: C.red,
   },
-  statusIndicatorText: { color: C.textMid, fontSize: 12, fontFamily: MONO, flex: 1 },
+  statusIndicatorText: { color: C.bodyText, fontSize: 12, fontFamily: MONO, flex: 1 },
 
   inputWrapper: { flexDirection: "row", alignItems: "flex-end", gap: 10 },
   input: {
@@ -1533,8 +1535,8 @@ const styles = StyleSheet.create({
     fontFamily: MONO,
   },
   modalSubtitle: {
-    color: C.textDim,
-    fontSize: 12,
+    color: C.textMid,
+    fontSize: 13,
     textAlign: "center",
     marginTop: 5,
     marginBottom: 18,
@@ -1560,9 +1562,9 @@ const styles = StyleSheet.create({
   },
   modeOptionEmoji: { fontSize: 28, marginRight: 14 },
   modeOptionInfo: { flex: 1 },
-  modeOptionLabel: { color: C.textMid, fontSize: 14, fontWeight: "700", fontFamily: MONO },
+  modeOptionLabel: { color: C.bodyText, fontSize: 14, fontWeight: "700", fontFamily: MONO },
   modeOptionLabelActive: { color: C.neon },
-  modeOptionDesc: { color: C.textDim, fontSize: 12, marginTop: 3, lineHeight: 17 },
+  modeOptionDesc: { color: C.textMid, fontSize: 12, marginTop: 3, lineHeight: 18 },
   modeCheckWrap: {
     width: 26,
     height: 26,
