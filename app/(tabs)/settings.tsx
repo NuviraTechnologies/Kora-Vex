@@ -16,8 +16,9 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Haptics from "expo-haptics";
-import * as Speech from "expo-speech";
-import { setAudioModeAsync } from "expo-audio";
+import { createAudioPlayer, setAudioModeAsync } from "expo-audio";
+import * as FileSystem from "expo-file-system/legacy";
+import { trpc } from "@/lib/trpc";
 import { useVexCoins } from "@/lib/vex-coins";
 import { VEX_ASSETS } from "@/vex-assets";
 
@@ -147,28 +148,40 @@ export default function SettingsScreen() {
     haptic();
   };
 
+  const ttsMutation = trpc.chat.tts.useMutation();
+  let testPlayer: ReturnType<typeof createAudioPlayer> | null = null;
+
   const testVoice = async () => {
     haptic();
     if (isSpeaking) {
-      Speech.stop();
+      try { testPlayer?.remove(); } catch {}
+      testPlayer = null;
       setIsSpeaking(false);
       return;
     }
     try {
-      if (Platform.OS !== "web") {
-        await setAudioModeAsync({ playsInSilentMode: true });
-      }
+      await setAudioModeAsync({ playsInSilentMode: true });
       setIsSpeaking(true);
-      Speech.speak(
-        "Greetings, carbon-based life form. I am Kora Vex. I crashed here in 1972 and I have been mildly disappointed ever since. Your planet has excellent pizza, though. I will give you that.",
-        {
-          language: "en-GB",
-          pitch: 0.85,
-          rate: 0.92,
-          onDone: () => setIsSpeaking(false),
-          onError: () => setIsSpeaking(false),
+      const result = await ttsMutation.mutateAsync({
+        text: "Greetings, carbon-based life form. I am Kora Vex. I crashed here in 1972 and have been mildly disappointed ever since. Your planet has excellent pizza, though. I will give you that.",
+        voice: "en-US-GuyNeural",
+      });
+      if (!result.base64) throw new Error("No audio");
+      const tmpUri = FileSystem.cacheDirectory + `vex-settings-test-${Date.now()}.mp3`;
+      await FileSystem.writeAsStringAsync(tmpUri, result.base64, {
+        encoding: FileSystem.EncodingType.Base64,
+      });
+      const player = createAudioPlayer({ uri: tmpUri });
+      testPlayer = player;
+      player.play();
+      const check = setInterval(() => {
+        if (!player.playing) {
+          clearInterval(check);
+          setIsSpeaking(false);
+          try { player.remove(); } catch {}
+          testPlayer = null;
         }
-      );
+      }, 500);
     } catch {
       setIsSpeaking(false);
     }

@@ -574,43 +574,66 @@ export default function ChatScreen() {
   // Ask Vex to draw/generate an image
   const askVexToDraw = useCallback(async () => {
     haptic();
-    const prompt = inputText.trim();
-    if (!prompt) {
-      Alert.alert("What should Vex draw?", "Type a description first, then tap Draw.");
-      return;
-    }
-    setIsGeneratingImage(true);
-    setInputText("");
-    // Add user message
-    const userMsg: Message = {
-      id: Date.now().toString(),
-      role: "user",
-      content: `🎨 Draw for me: ${prompt}`,
-      timestamp: Date.now(),
+    const existingPrompt = inputText.trim();
+
+    const runDraw = async (prompt: string) => {
+      setIsGeneratingImage(true);
+      setInputText("");
+      const userMsg: Message = {
+        id: Date.now().toString(),
+        role: "user",
+        content: `🎨 Draw for me: ${prompt}`,
+        timestamp: Date.now(),
+      };
+      setMessages((prev) => [...prev, userMsg]);
+      try {
+        const result = await generateImageMutation.mutateAsync({ prompt });
+        if (!result.url) throw new Error("No image URL returned");
+        const vexMsg: Message = {
+          id: (Date.now() + 1).toString(),
+          role: "assistant",
+          content: `*adjusts holographic display* Fine, human. I've rendered your request using my superior alien artistic algorithms. Behold:`,
+          timestamp: Date.now() + 1,
+          imageUrl: result.url,
+        };
+        setMessages((prev) => [...prev, vexMsg]);
+        saveMessages([...messages, userMsg, vexMsg]);
+        if (voiceEnabled) speakMessage(vexMsg.content, vexMsg.id);
+      } catch (err) {
+        const errMsg: Message = {
+          id: (Date.now() + 1).toString(),
+          role: "assistant",
+          content: "My image rendering matrix is temporarily offline. Even alien tech has bad days. Try again.",
+          timestamp: Date.now() + 1,
+        };
+        setMessages((prev) => [...prev, errMsg]);
+      } finally {
+        setIsGeneratingImage(false);
+      }
     };
-    setMessages((prev) => [...prev, userMsg]);
-    try {
-      const result = await generateImageMutation.mutateAsync({ prompt });
-      const vexMsg: Message = {
-        id: (Date.now() + 1).toString(),
-        role: "assistant",
-        content: `*adjusts holographic display* Fine, human. I've rendered your request using my superior alien artistic algorithms. Behold:`,
-        timestamp: Date.now() + 1,
-        imageUrl: result.url,
-      };
-      setMessages((prev) => [...prev, vexMsg]);
-      saveMessages([...messages, userMsg, vexMsg]);
-      if (voiceEnabled) speakMessage(vexMsg.content, vexMsg.id);
-    } catch {
-      const errMsg: Message = {
-        id: (Date.now() + 1).toString(),
-        role: "assistant",
-        content: "My image rendering matrix is temporarily offline. Even alien tech has bad days. Try again.",
-        timestamp: Date.now() + 1,
-      };
-      setMessages((prev) => [...prev, errMsg]);
-    } finally {
-      setIsGeneratingImage(false);
+
+    if (existingPrompt) {
+      await runDraw(existingPrompt);
+    } else {
+      // Show prompt dialog so user knows what to type
+      Alert.prompt(
+        "🎨 What should Vex draw?",
+        "Describe anything — an alien city, a space battle, a cosmic portrait...",
+        [
+          { text: "Cancel", style: "cancel" },
+          {
+            text: "Draw It",
+            onPress: async (text?: string) => {
+              if (text && text.trim()) {
+                await runDraw(text.trim());
+              } else {
+                Alert.alert("Nothing to draw", "Type a description and try again.");
+              }
+            },
+          },
+        ],
+        "plain-text"
+      );
     }
   }, [haptic, inputText, generateImageMutation, messages, saveMessages, voiceEnabled, speakMessage]);
 
@@ -678,9 +701,72 @@ export default function ChatScreen() {
     });
   }, [messages]);
 
+  // Detect draw intent from natural language
+  const DRAW_PATTERNS = [
+    /^draw\s+(me\s+)?/i,
+    /^(please\s+)?draw\s+/i,
+    /^(can you\s+)?draw\s+/i,
+    /^(create|generate|make|paint|sketch|render|show me)\s+(me\s+)?(a|an|the|some)?\s*image\s+of\s+/i,
+    /^(create|generate|make|paint|sketch|render)\s+(me\s+)?(a|an|the)?\s+/i,
+    /^(i want|i'd like|i would like)\s+(you to\s+)?(draw|paint|sketch|create|generate)\s+/i,
+  ];
+
+  const isDrawRequest = (text: string) =>
+    DRAW_PATTERNS.some((p) => p.test(text.trim()));
+
+  const extractDrawPrompt = (text: string) => {
+    for (const p of DRAW_PATTERNS) {
+      const cleaned = text.trim().replace(p, "").trim();
+      if (cleaned.length > 0) return cleaned;
+    }
+    return text.trim();
+  };
+
   const sendMessage = useCallback(async () => {
     const text = inputText.trim();
     if ((!text && !pendingImageBase64) || isLoading) return;
+
+    // Natural language draw detection — intercept before sending as chat
+    if (text && !pendingImageBase64 && isDrawRequest(text)) {
+      const drawPrompt = extractDrawPrompt(text);
+      setInputText("");
+      setInputHeight(44);
+      haptic();
+      // Directly run the draw flow with the extracted prompt
+      setIsGeneratingImage(true);
+      const userMsg: Message = {
+        id: Date.now().toString(),
+        role: "user",
+        content: `🎨 Draw for me: ${drawPrompt}`,
+        timestamp: Date.now(),
+      };
+      setMessages((prev) => [...prev, userMsg]);
+      try {
+        const result = await generateImageMutation.mutateAsync({ prompt: drawPrompt });
+        if (!result.url) throw new Error("No image URL");
+        const vexMsg: Message = {
+          id: (Date.now() + 1).toString(),
+          role: "assistant",
+          content: `*adjusts holographic display* Fine, human. I've rendered your request using my superior alien artistic algorithms. Behold:`,
+          timestamp: Date.now() + 1,
+          imageUrl: result.url,
+        };
+        setMessages((prev) => [...prev, vexMsg]);
+        await saveMessages([...messages, userMsg, vexMsg]);
+        if (voiceEnabled) speakMessage(vexMsg.content, vexMsg.id);
+      } catch {
+        const errMsg: Message = {
+          id: (Date.now() + 1).toString(),
+          role: "assistant",
+          content: "My image rendering matrix is temporarily offline. Even alien tech has bad days. Try again.",
+          timestamp: Date.now() + 1,
+        };
+        setMessages((prev) => [...prev, errMsg]);
+      } finally {
+        setIsGeneratingImage(false);
+      }
+      return;
+    }
 
     haptic();
     setInputText("");
@@ -968,7 +1054,7 @@ export default function ChatScreen() {
                   : isUploadingFile
                   ? "📡  Uploading file to Vex..."
                   : isGeneratingImage
-                  ? "🎨  Vex is painting your reality..."
+                  ? "🎨  Vex is painting your reality... (this may take 15-20 sec)"
                   : "📡  Uploading image to Vex..."}
               </Text>
               <ActivityIndicator size="small" color={C.neon} />
@@ -1010,8 +1096,13 @@ export default function ChatScreen() {
             <Text style={styles.charCount}>{1500 - inputText.length} chars left</Text>
           )}
 
-          {/* Toolbar — labeled for first-time users */}
-          <View style={styles.inputToolbar}>
+          {/* Toolbar — horizontally scrollable so nothing gets cut off on small screens */}
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.inputToolbar}
+            keyboardShouldPersistTaps="handled"
+          >
             <Pressable style={({ pressed }) => [styles.toolbarLabelBtn, pressed && { opacity: 0.5 }]} onPress={pickImage}>
               <Text style={styles.toolbarIcon}>🖼️</Text>
               <Text style={styles.toolbarLabel}>Photo</Text>
@@ -1024,17 +1115,7 @@ export default function ChatScreen() {
               <Text style={styles.toolbarIcon}>{isUploadingFile ? "⏳" : "📎"}</Text>
               <Text style={styles.toolbarLabel}>File</Text>
             </Pressable>
-            <Pressable
-              style={({ pressed }) => [
-                styles.toolbarLabelBtn,
-                isGeneratingImage && { borderColor: C.neon, borderWidth: 1 },
-                pressed && { opacity: 0.5 },
-              ]}
-              onPress={askVexToDraw}
-            >
-              <Text style={styles.toolbarIcon}>{isGeneratingImage ? "⏳" : "🎨"}</Text>
-              <Text style={styles.toolbarLabel}>Draw</Text>
-            </Pressable>
+
             <Pressable
               style={({ pressed }) => [
                 styles.toolbarLabelBtn,
@@ -1067,7 +1148,7 @@ export default function ChatScreen() {
               <Text style={styles.toolbarIcon}>{voiceEnabled ? "🔊" : "🔇"}</Text>
               <Text style={styles.toolbarLabel}>{voiceEnabled ? "Sound" : "Muted"}</Text>
             </Pressable>
-          </View>
+          </ScrollView>
         </View>
       </KeyboardAvoidingView>
 
@@ -1497,6 +1578,8 @@ const styles = StyleSheet.create({
     gap: 6,
     marginTop: 8,
     paddingHorizontal: 2,
+    flexWrap: "nowrap",
+    overflow: "hidden",
   },
   toolbarIconBtn: {
     width: 38,

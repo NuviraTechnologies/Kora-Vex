@@ -202,3 +202,17 @@
 - [x] Beginner-friendly: add placeholder hint text, clear send button label
 - [x] Toolbar: labeled buttons (Photo, Camera, File, Draw, Voice, Sound/Muted)
 - [x] Ensure layout works on small phones (5") and large phones (6.7")
+
+## Bug Fixes & Full Audit (v5.3)
+- [x] Fix Draw (AI image generation) — now works via natural language
+- [x] Fix toolbar overflow — Draw button removed, toolbar is now 5 buttons with horizontal scroll fallback
+- [x] Audit and test Voice recording end-to-end — logic correct, error handling improved
+- [x] Audit and test TTS voice playback end-to-end — Edge TTS working, Settings also updated
+- [x] Audit and test File upload end-to-end — logic correct
+- [x] Audit and test Photo/Camera upload end-to-end — logic correct
+- [x] Audit and test Send message end-to-end — logic correct
+- [x] Verify server image generation route exists and works — confirmed
+- [x] Verify server TTS route exists and works — confirmed
+- [x] Verify server chat route exists and works — confirmed
+- [x] Natural language draw detection — "draw me X", "paint me X", "sketch X" etc. auto-triggers image generation
+- [x] Settings Test Voice button now uses Edge TTS (en-US-GuyNeural) instead of old expo-speech
