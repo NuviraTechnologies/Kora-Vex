@@ -128,7 +128,7 @@ const LORE_DATA: LoreCard[] = [
     image: VEX_ASSETS.starMap,
   },
   {
-    id: "8",
+    id: "8b",
     title: "Kardashev Type I",
     category: "civilizations",
     emoji: "🌍",
@@ -148,7 +148,7 @@ const LORE_DATA: LoreCard[] = [
     image: VEX_ASSETS.starMap,
   },
   {
-    id: "10",
+    id: "10b",
     title: "Junk DNA — Not Junk",
     category: "dna",
     emoji: "🧬",

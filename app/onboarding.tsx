@@ -216,7 +216,7 @@ export default function OnboardingScreen() {
           </Text>
         </TouchableOpacity>
 
-        <Text style={styles.finePrint}>Kid-friendly · All ages · Powered by alien intelligence</Text>
+        <Text style={styles.finePrint}>For ages 13+ · Powered by alien intelligence</Text>
       </Animated.View>
     </View>
   );

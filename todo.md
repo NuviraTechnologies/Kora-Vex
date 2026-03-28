@@ -186,3 +186,12 @@
 - [x] Add AI image generation — user can ask Vex to "draw" anything
 - [x] Show generated images inline in chat bubbles
 - [x] Add "Draw for me" quick action button in chat toolbar
+
+## Chat UI Overhaul (v5.1)
+- [x] Fix chat screen scrolling — send button hidden when toolbar is open
+- [x] Redesign input area: send button always visible, toolbar collapsible/compact
+- [x] Clean up spacing — less bunched up, more breathing room
+- [x] Move toolbar to a single row of small icon buttons (no labels needed)
+- [x] Update age rating to 13+ (remove "all ages" / "kid-friendly" language)
+- [x] Update app store description and content rating to Teen (13+)
+- [x] Fix duplicate lore IDs causing React key warnings

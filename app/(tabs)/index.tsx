@@ -953,104 +953,36 @@ export default function ChatScreen() {
           </View>
         )}
 
-        {/* Input area */}
-        <View style={[styles.inputArea, { paddingBottom: Math.max(insets.bottom, 12) }]}>
+        {/* Input area — always-visible send, compact icon toolbar below */}
+        <View style={[styles.inputArea, { paddingBottom: Math.max(insets.bottom, 8) }]}>
 
-          {/* Toolbar row */}
-          <View style={styles.inputToolbar}>
-            <Pressable
-              style={({ pressed }) => [styles.toolbarBtn, pressed && { opacity: 0.6 }]}
-              onPress={pickImage}
-            >
-              <Text style={styles.toolbarBtnIcon}>🖼️</Text>
-              <Text style={styles.toolbarBtnLabel}>Photo</Text>
-            </Pressable>
-            <Pressable
-              style={({ pressed }) => [styles.toolbarBtn, pressed && { opacity: 0.6 }]}
-              onPress={takePhoto}
-            >
-              <Text style={styles.toolbarBtnIcon}>📷</Text>
-              <Text style={styles.toolbarBtnLabel}>Camera</Text>
-            </Pressable>
-            <Pressable
-              style={({ pressed }) => [styles.toolbarBtn, pressed && { opacity: 0.6 }]}
-              onPress={pickFile}
-            >
-              <Text style={styles.toolbarBtnIcon}>{isUploadingFile ? "⏳" : "📎"}</Text>
-              <Text style={styles.toolbarBtnLabel}>File</Text>
-            </Pressable>
-            <Pressable
-              style={({ pressed }) => [
-                styles.toolbarBtn,
-                isGeneratingImage && styles.toolbarBtnActive,
-                pressed && { opacity: 0.6 },
-              ]}
-              onPress={askVexToDraw}
-            >
-              <Text style={styles.toolbarBtnIcon}>{isGeneratingImage ? "⏳" : "🎨"}</Text>
-              <Text style={[styles.toolbarBtnLabel, isGeneratingImage && { color: C.neon }]}>Draw</Text>
-            </Pressable>
-            <Pressable
-              style={({ pressed }) => [
-                styles.toolbarBtn,
-                isRecording && styles.toolbarBtnRecording,
-                pressed && { opacity: 0.6 },
-              ]}
-              onPress={toggleRecording}
-            >
-              <Text style={styles.toolbarBtnIcon}>{isRecording ? "⏹" : "🎤"}</Text>
-              <Text style={[styles.toolbarBtnLabel, isRecording && { color: C.red }]}>
-                {isRecording ? "Stop" : "Mic"}
-              </Text>
-            </Pressable>
-            <Pressable
-              style={({ pressed }) => [
-                styles.toolbarBtn,
-                voiceEnabled && styles.toolbarBtnActive,
-                pressed && { opacity: 0.6 },
-              ]}
-              onPress={() => {
-                setVoiceEnabled((v) => {
-                  AsyncStorage.setItem(VOICE_KEY, (!v).toString());
-                  return !v;
-                });
-                haptic();
-              }}
-            >
-              <Text style={styles.toolbarBtnIcon}>{voiceEnabled ? "🔊" : "🔇"}</Text>
-              <Text style={[styles.toolbarBtnLabel, voiceEnabled && { color: C.neon }]}>
-                {voiceEnabled ? "On" : "Off"}
-              </Text>
-            </Pressable>
-          </View>
-
-          {/* Status indicators */}
+          {/* Status bar — recording / transcribing / uploading */}
           {(isRecording || isTranscribing || isUploadingImage || isUploadingFile || isGeneratingImage) && (
             <View style={styles.statusIndicator}>
-              <View style={styles.statusIndicatorDot} />
+              <View style={[styles.statusIndicatorDot, isRecording && { backgroundColor: C.red }]} />
               <Text style={styles.statusIndicatorText}>
                 {isRecording
-                  ? "Recording — tap to stop"
+                  ? "🔴  Recording — tap ⏹ to stop"
                   : isTranscribing
-                  ? "Vex is decoding your audio..."
+                  ? "⚡  Vex is decoding your audio..."
                   : isUploadingFile
-                  ? "Uploading file to Vex..."
+                  ? "📡  Uploading file to Vex..."
                   : isGeneratingImage
-                  ? "Vex is painting your reality..."
-                  : "Uploading image to Vex..."}
+                  ? "🎨  Vex is painting your reality..."
+                  : "📡  Uploading image to Vex..."}
               </Text>
               <ActivityIndicator size="small" color={C.neon} />
             </View>
           )}
 
-          {/* Text input row */}
+          {/* Main input row: text field + send button always side by side */}
           <View style={styles.inputWrapper}>
             <TextInput
               ref={inputRef}
-              style={[styles.input, { height: Math.max(44, Math.min(inputHeight, 120)) }]}
+              style={[styles.input, { height: Math.max(44, Math.min(inputHeight, 100)) }]}
               value={inputText}
               onChangeText={setInputText}
-              onContentSizeChange={(e) => setInputHeight(e.nativeEvent.contentSize.height + 20)}
+              onContentSizeChange={(e) => setInputHeight(e.nativeEvent.contentSize.height + 16)}
               placeholder="Ask Vex anything..."
               placeholderTextColor={C.neonFaint}
               multiline
@@ -1077,6 +1009,59 @@ export default function ChatScreen() {
           {inputText.length > 1200 && (
             <Text style={styles.charCount}>{1500 - inputText.length} chars left</Text>
           )}
+
+          {/* Compact icon-only toolbar */}
+          <View style={styles.inputToolbar}>
+            <Pressable style={({ pressed }) => [styles.toolbarIconBtn, pressed && { opacity: 0.5 }]} onPress={pickImage}>
+              <Text style={styles.toolbarIcon}>🖼️</Text>
+            </Pressable>
+            <Pressable style={({ pressed }) => [styles.toolbarIconBtn, pressed && { opacity: 0.5 }]} onPress={takePhoto}>
+              <Text style={styles.toolbarIcon}>📷</Text>
+            </Pressable>
+            <Pressable style={({ pressed }) => [styles.toolbarIconBtn, pressed && { opacity: 0.5 }]} onPress={pickFile}>
+              <Text style={styles.toolbarIcon}>{isUploadingFile ? "⏳" : "📎"}</Text>
+            </Pressable>
+            <Pressable
+              style={({ pressed }) => [
+                styles.toolbarIconBtn,
+                isGeneratingImage && { borderColor: C.neon, borderWidth: 1 },
+                pressed && { opacity: 0.5 },
+              ]}
+              onPress={askVexToDraw}
+            >
+              <Text style={styles.toolbarIcon}>{isGeneratingImage ? "⏳" : "🎨"}</Text>
+            </Pressable>
+            <Pressable
+              style={({ pressed }) => [
+                styles.toolbarIconBtn,
+                isRecording && { borderColor: C.red, borderWidth: 1, backgroundColor: "#1a0000" },
+                pressed && { opacity: 0.5 },
+              ]}
+              onPress={toggleRecording}
+            >
+              <Text style={styles.toolbarIcon}>{isRecording ? "⏹" : "🎤"}</Text>
+            </Pressable>
+
+            {/* Divider */}
+            <View style={styles.toolbarDivider} />
+
+            <Pressable
+              style={({ pressed }) => [
+                styles.toolbarIconBtn,
+                voiceEnabled && { borderColor: C.neon, borderWidth: 1 },
+                pressed && { opacity: 0.5 },
+              ]}
+              onPress={() => {
+                setVoiceEnabled((v) => {
+                  AsyncStorage.setItem(VOICE_KEY, (!v).toString());
+                  return !v;
+                });
+                haptic();
+              }}
+            >
+              <Text style={styles.toolbarIcon}>{voiceEnabled ? "🔊" : "🔇"}</Text>
+            </Pressable>
+          </View>
         </View>
       </KeyboardAvoidingView>
 
@@ -1502,9 +1487,24 @@ const styles = StyleSheet.create({
   },
   inputToolbar: {
     flexDirection: "row",
-    gap: 8,
-    marginBottom: 10,
+    alignItems: "center",
+    gap: 6,
+    marginTop: 8,
+    paddingHorizontal: 2,
   },
+  toolbarIconBtn: {
+    width: 38,
+    height: 34,
+    borderRadius: 10,
+    backgroundColor: C.surface,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  toolbarIcon: { fontSize: 18 },
+  toolbarDivider: {
+    flex: 1,
+  },
+  // Legacy (kept for any remaining references)
   toolbarBtn: {
     flex: 1,
     backgroundColor: C.surface,
