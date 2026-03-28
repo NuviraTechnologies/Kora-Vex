@@ -55,4 +55,54 @@
 - [x] Star field background on onboarding
 - [x] Neon glow shadow on Vex bubbles
 - [x] Dark mode only enforcement
-- [x] Vitest unit tests (15 passing)
+- [x] Vitest unit tests
+
+## Voice & Audio (v2)
+- [x] TTS voice output — Vex speaks responses aloud (Northwestern European accent via expo-speech)
+- [x] Voice toggle button in chat toolbar (speaker on/off)
+- [x] Auto-speak Vex responses when voice is enabled
+- [x] Voice input (speech-to-text) — tap mic to speak your message
+- [x] Per-message "Hear Vex" speak/stop button
+- [x] Voice test in Settings screen
+
+## Image Upload & Vision (v2)
+- [x] Image attach button in chat input bar (gallery picker)
+- [x] Camera capture button in chat input bar
+- [x] Send image to AI backend with vision prompt
+- [x] Vex analyzes and reacts to uploaded images in character
+- [x] Image preview in chat bubble
+- [x] Pending image preview with remove button
+
+## Roleplay Modes (v2)
+- [x] Roleplay mode selector modal (6 modes)
+- [x] Modes: Normal Chat, Alien Interrogation, Galaxy Tour Guide, Alien News Anchor, Conspiracy Theorist, Science Explainer
+- [x] Active mode badge displayed in chat header
+- [x] Mode-specific system prompt injection on server
+- [x] Mode-specific greeting when switching
+- [x] Mode persisted in AsyncStorage
+
+## VEX Coin & Gamification (v2)
+- [x] VEX Coin counter in chat header
+- [x] Earn coins per message (+5), milestones (+25, +50, +100)
+- [x] Daily streak tracker with fire emoji
+- [x] Coin toast notification on earn
+- [x] First contact bonus (+10)
+- [x] Mode-switch bonus (+15)
+- [x] Coin total and streak persisted in AsyncStorage
+- [x] Stats card in Settings screen
+
+## Alien News Ticker (v2)
+- [x] Scrolling news ticker at top of Chat screen
+- [x] 15 rotating alien "headlines" (Vex-style sarcastic news)
+- [x] Headlines served from tRPC server endpoint
+
+## Share & Export (v2)
+- [x] Share conversation button in Settings (native Share sheet)
+- [x] Formatted export with Kora Vex branding
+
+## Tests (v2)
+- [x] 25 passing vitest tests
+- [x] Roleplay mode coverage (server + client)
+- [x] Headlines data integrity tests
+- [x] Image message validation tests
+- [x] Mode fallback tests
