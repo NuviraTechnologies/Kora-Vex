@@ -227,3 +227,8 @@
 - [x] Rebuild layout: KAV behavior=undefined on Android, softwareKeyboardLayoutMode=pan in app.config
 - [x] Images in chat: fixed to 260x260 so they’re always clearly visible
 - [x] No more tiny trapped window — FlatList fills all available space
+
+## Branding Cleanup
+- [ ] Remove all Manus references from user-facing app screens
+- [ ] Replace manuscdn.com image URLs with permanent hosted URLs or local assets
+- [ ] Fix production API URL so all features work in published builds

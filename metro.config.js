@@ -1,11 +1,12 @@
+// metro.config.js — CJS wrapper with async NativeWind import for EAS compatibility
 const { getDefaultConfig } = require("expo/metro-config");
-const { withNativeWind } = require("nativewind/metro");
 
 const config = getDefaultConfig(__dirname);
 
-module.exports = withNativeWind(config, {
-  input: "./global.css",
-  // Force write CSS to file system instead of virtual modules
-  // This fixes iOS styling issues in development mode
-  forceWriteFileSystem: true,
-});
+// NativeWind v4 ships ESM-only metro wrapper; use dynamic import to stay CJS-compatible
+async function getConfig() {
+  const { withNativeWind } = await import("nativewind/dist/metro/index.js");
+  return withNativeWind(config, { input: "./global.css" });
+}
+
+module.exports = getConfig();
