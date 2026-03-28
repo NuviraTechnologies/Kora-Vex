@@ -1,4 +1,9 @@
 import { z } from "zod";
+import { MsEdgeTTS, OUTPUT_FORMAT } from "msedge-tts";
+import * as fs from "fs";
+import * as path from "path";
+import * as os from "os";
+import { generateImage } from "./_core/imageGeneration";
 import { COOKIE_NAME } from "../shared/const.js";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
@@ -138,6 +143,66 @@ export const appRouter = router({
     getHeadlines: publicProcedure.query(() => {
       return { headlines: ALIEN_HEADLINES };
     }),
+
+    // Premium TTS — Microsoft Edge Neural Voice (en-US-GuyNeural)
+    // Returns base64 MP3 audio of Vex speaking the given text
+    tts: publicProcedure
+      .input(
+        z.object({
+          text: z.string().max(2000),
+          voice: z.string().default("en-US-GuyNeural"),
+        })
+      )
+      .mutation(async ({ input }) => {
+        const tts = new MsEdgeTTS();
+        await tts.setMetadata(input.voice, OUTPUT_FORMAT.AUDIO_24KHZ_96KBITRATE_MONO_MP3);
+        const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "vex-tts-"));
+        try {
+          await tts.toFile(tmpDir, input.text);
+          const audioPath = path.join(tmpDir, "audio.mp3");
+          const audioBuffer = fs.readFileSync(audioPath);
+          const base64 = audioBuffer.toString("base64");
+          return { base64, mimeType: "audio/mpeg" };
+        } finally {
+          try { fs.rmSync(tmpDir, { recursive: true, force: true }); } catch {}
+        }
+      }),
+
+    // Upload a file (PDF, text, doc) and have Vex analyze it
+    uploadFile: publicProcedure
+      .input(
+        z.object({
+          base64: z.string(),
+          mimeType: z.string(),
+          fileName: z.string(),
+        })
+      )
+      .mutation(async ({ input }) => {
+        const buffer = Buffer.from(input.base64, "base64");
+        const ext = input.fileName.split(".").pop() ?? "bin";
+        const key = `vex-files/file-${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+        const { url } = await storagePut(key, buffer, input.mimeType);
+        // Extract text content for analysis
+        let textContent = "";
+        if (input.mimeType === "text/plain" || ext === "txt" || ext === "md" || ext === "csv") {
+          textContent = buffer.toString("utf-8").slice(0, 8000);
+        }
+        return { url, textContent, fileName: input.fileName };
+      }),
+
+    // AI Image Generation — Vex draws anything the user asks for
+    generateImage: publicProcedure
+      .input(
+        z.object({
+          prompt: z.string().max(500),
+          style: z.string().default("cosmic alien art, neon green and black, cyberpunk sci-fi style"),
+        })
+      )
+      .mutation(async ({ input }) => {
+        const fullPrompt = `${input.prompt}, ${input.style}`;
+        const result = await generateImage({ prompt: fullPrompt });
+        return { url: result.url ?? "" };
+      }),
   }),
 });
 

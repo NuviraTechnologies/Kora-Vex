@@ -27,15 +27,16 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Haptics from "expo-haptics";
-import * as Speech from "expo-speech";
-import * as ImagePicker from "expo-image-picker";
+import * as DocumentPicker from "expo-document-picker";
 import {
+  createAudioPlayer,
+  setAudioModeAsync,
   useAudioRecorder,
   useAudioRecorderState,
   requestRecordingPermissionsAsync,
-  setAudioModeAsync,
   RecordingPresets,
 } from "expo-audio";
+import * as ImagePicker from "expo-image-picker";
 import * as FileSystem from "expo-file-system/legacy";
 import { router } from "expo-router";
 import { trpc } from "@/lib/trpc";
@@ -92,36 +93,8 @@ function stripMarkdown(text: string): string {
     .trim();
 }
 
-// Northwestern European voice preference
-const PREFERRED_VOICE_PATTERNS = [
-  "com.apple.ttsbundle.Daniel-compact",
-  "com.apple.ttsbundle.Daniel",
-  "com.apple.voice.compact.en-GB.Daniel",
-  "en-GB",
-  "en-IE",
-  "com.apple.ttsbundle.Moira",
-  "en-AU",
-];
-
-async function getPreferredVoice(): Promise<string | undefined> {
-  try {
-    const voices = await Speech.getAvailableVoicesAsync();
-    for (const pattern of PREFERRED_VOICE_PATTERNS) {
-      const match = voices.find(
-        (v) =>
-          v.identifier === pattern ||
-          v.identifier.includes(pattern) ||
-          v.language === pattern ||
-          v.language.startsWith(pattern)
-      );
-      if (match) return match.identifier;
-    }
-    const english = voices.find((v) => v.language.startsWith("en"));
-    return english?.identifier;
-  } catch {
-    return undefined;
-  }
-}
+// Current TTS audio player reference (for stop/cleanup)
+let currentTTSPlayer: ReturnType<typeof createAudioPlayer> | null = null;
 
 // Render Vex message text with markdown bold support
 function VexMessageText({ text }: { text: string }) {
@@ -409,7 +382,12 @@ export default function ChatScreen() {
   const chatMutation = trpc.chat.sendMessage.useMutation();
   const uploadImageMutation = trpc.chat.uploadImage.useMutation();
   const transcribeVoiceMutation = trpc.chat.transcribeVoice.useMutation();
+  const ttsMutation = trpc.chat.tts.useMutation();
+  const uploadFileMutation = trpc.chat.uploadFile.useMutation();
+  const generateImageMutation = trpc.chat.generateImage.useMutation();
   const headlinesQuery = trpc.chat.getHeadlines.useQuery();
+  const [isGeneratingImage, setIsGeneratingImage] = useState(false);
+  const [isUploadingFile, setIsUploadingFile] = useState(false);
 
   const audioRecorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
   const recorderState = useAudioRecorderState(audioRecorder);
@@ -517,43 +495,124 @@ export default function ChatScreen() {
 
   const speakMessage = useCallback(async (text: string, msgId?: string) => {
     try {
-      const isSpeaking = await Speech.isSpeakingAsync();
-      if (isSpeaking) {
-        await Speech.stop();
+      // Stop any currently playing TTS
+      if (currentTTSPlayer) {
+        try { currentTTSPlayer.remove(); } catch {}
+        currentTTSPlayer = null;
         setSpeakingMsgId(null);
-        return;
+        if (speakingMsgId === msgId) return; // toggle off
       }
-      await setAudioModeAsync({ playsInSilentMode: true, allowsRecording: false });
-      const cleanText = stripMarkdown(text);
-      const voice = await getPreferredVoice();
       if (msgId) setSpeakingMsgId(msgId);
-      Speech.speak(cleanText, {
-        voice,
-        rate: 0.9,
-        pitch: 0.85,
-        language: "en-GB",
-        onDone: () => {
-          setSpeakingMsgId(null);
-          setAudioModeAsync({ playsInSilentMode: true, allowsRecording: true }).catch(() => {});
-        },
-        onStopped: () => {
-          setSpeakingMsgId(null);
-          setAudioModeAsync({ playsInSilentMode: true, allowsRecording: true }).catch(() => {});
-        },
-        onError: () => {
-          setSpeakingMsgId(null);
-          setAudioModeAsync({ playsInSilentMode: true, allowsRecording: true }).catch(() => {});
-        },
+      const cleanText = stripMarkdown(text).slice(0, 1500);
+      // Call server-side Edge TTS (en-US-GuyNeural — deep, clear, natural)
+      const result = await ttsMutation.mutateAsync({ text: cleanText, voice: "en-US-GuyNeural" });
+      if (!result.base64) return;
+      // Write to temp file and play
+      await setAudioModeAsync({ playsInSilentMode: true });
+      const tmpUri = FileSystem.cacheDirectory + `vex-tts-${Date.now()}.mp3`;
+      await FileSystem.writeAsStringAsync(tmpUri, result.base64, {
+        encoding: FileSystem.EncodingType.Base64,
       });
+      const player = createAudioPlayer({ uri: tmpUri });
+      currentTTSPlayer = player;
+      player.play();
+      // Clean up when done
+      const checkDone = setInterval(() => {
+        try {
+          if (!player.playing) {
+            clearInterval(checkDone);
+            setSpeakingMsgId(null);
+            try { player.remove(); } catch {}
+            if (currentTTSPlayer === player) currentTTSPlayer = null;
+          }
+        } catch {
+          clearInterval(checkDone);
+          setSpeakingMsgId(null);
+        }
+      }, 500);
     } catch {
       setSpeakingMsgId(null);
     }
-  }, []);
+  }, [speakingMsgId, ttsMutation]);
 
   const copyMessage = useCallback((text: string) => {
     Clipboard.setString(text);
     haptic(Haptics.ImpactFeedbackStyle.Medium);
   }, [haptic]);
+
+  // Pick a file (PDF, txt, csv, md) for Vex to analyze
+  const pickFile = useCallback(async () => {
+    haptic();
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: ["text/plain", "application/pdf", "text/csv", "text/markdown", "application/msword"],
+        copyToCacheDirectory: true,
+      });
+      if (result.canceled || !result.assets?.[0]) return;
+      const asset = result.assets[0];
+      setIsUploadingFile(true);
+      const base64 = await FileSystem.readAsStringAsync(asset.uri, {
+        encoding: FileSystem.EncodingType.Base64,
+      });
+      const uploadResult = await uploadFileMutation.mutateAsync({
+        base64,
+        mimeType: asset.mimeType ?? "application/octet-stream",
+        fileName: asset.name,
+      });
+      setIsUploadingFile(false);
+      // Build a message asking Vex to analyze the file
+      const fileMsg = uploadResult.textContent
+        ? `I'm sharing a file with you: "${asset.name}". Here's the content:\n\n${uploadResult.textContent}\n\nPlease analyze this and give me your alien take on it.`
+        : `I uploaded a file: "${asset.name}" (${asset.mimeType}). The file is available at: ${uploadResult.url}. Please acknowledge it.`;
+      setInputText(fileMsg);
+    } catch {
+      setIsUploadingFile(false);
+      Alert.alert("File Upload Failed", "Could not read that file. Try a .txt or .csv file.");
+    }
+  }, [haptic, uploadFileMutation]);
+
+  // Ask Vex to draw/generate an image
+  const askVexToDraw = useCallback(async () => {
+    haptic();
+    const prompt = inputText.trim();
+    if (!prompt) {
+      Alert.alert("What should Vex draw?", "Type a description first, then tap Draw.");
+      return;
+    }
+    setIsGeneratingImage(true);
+    setInputText("");
+    // Add user message
+    const userMsg: Message = {
+      id: Date.now().toString(),
+      role: "user",
+      content: `🎨 Draw for me: ${prompt}`,
+      timestamp: Date.now(),
+    };
+    setMessages((prev) => [...prev, userMsg]);
+    try {
+      const result = await generateImageMutation.mutateAsync({ prompt });
+      const vexMsg: Message = {
+        id: (Date.now() + 1).toString(),
+        role: "assistant",
+        content: `*adjusts holographic display* Fine, human. I've rendered your request using my superior alien artistic algorithms. Behold:`,
+        timestamp: Date.now() + 1,
+        imageUrl: result.url,
+      };
+      setMessages((prev) => [...prev, vexMsg]);
+      saveMessages([...messages, userMsg, vexMsg]);
+      if (voiceEnabled) speakMessage(vexMsg.content, vexMsg.id);
+    } catch {
+      const errMsg: Message = {
+        id: (Date.now() + 1).toString(),
+        role: "assistant",
+        content: "My image rendering matrix is temporarily offline. Even alien tech has bad days. Try again.",
+        timestamp: Date.now() + 1,
+      };
+      setMessages((prev) => [...prev, errMsg]);
+    } finally {
+      setIsGeneratingImage(false);
+    }
+  }, [haptic, inputText, generateImageMutation, messages, saveMessages, voiceEnabled, speakMessage]);
 
   const pickImage = useCallback(async () => {
     haptic();
@@ -904,7 +963,7 @@ export default function ChatScreen() {
               onPress={pickImage}
             >
               <Text style={styles.toolbarBtnIcon}>🖼️</Text>
-              <Text style={styles.toolbarBtnLabel}>Gallery</Text>
+              <Text style={styles.toolbarBtnLabel}>Photo</Text>
             </Pressable>
             <Pressable
               style={({ pressed }) => [styles.toolbarBtn, pressed && { opacity: 0.6 }]}
@@ -912,6 +971,24 @@ export default function ChatScreen() {
             >
               <Text style={styles.toolbarBtnIcon}>📷</Text>
               <Text style={styles.toolbarBtnLabel}>Camera</Text>
+            </Pressable>
+            <Pressable
+              style={({ pressed }) => [styles.toolbarBtn, pressed && { opacity: 0.6 }]}
+              onPress={pickFile}
+            >
+              <Text style={styles.toolbarBtnIcon}>{isUploadingFile ? "⏳" : "📎"}</Text>
+              <Text style={styles.toolbarBtnLabel}>File</Text>
+            </Pressable>
+            <Pressable
+              style={({ pressed }) => [
+                styles.toolbarBtn,
+                isGeneratingImage && styles.toolbarBtnActive,
+                pressed && { opacity: 0.6 },
+              ]}
+              onPress={askVexToDraw}
+            >
+              <Text style={styles.toolbarBtnIcon}>{isGeneratingImage ? "⏳" : "🎨"}</Text>
+              <Text style={[styles.toolbarBtnLabel, isGeneratingImage && { color: C.neon }]}>Draw</Text>
             </Pressable>
             <Pressable
               style={({ pressed }) => [
@@ -923,7 +1000,7 @@ export default function ChatScreen() {
             >
               <Text style={styles.toolbarBtnIcon}>{isRecording ? "⏹" : "🎤"}</Text>
               <Text style={[styles.toolbarBtnLabel, isRecording && { color: C.red }]}>
-                {isRecording ? "Stop" : "Voice"}
+                {isRecording ? "Stop" : "Mic"}
               </Text>
             </Pressable>
             <Pressable
@@ -948,7 +1025,7 @@ export default function ChatScreen() {
           </View>
 
           {/* Status indicators */}
-          {(isRecording || isTranscribing || isUploadingImage) && (
+          {(isRecording || isTranscribing || isUploadingImage || isUploadingFile || isGeneratingImage) && (
             <View style={styles.statusIndicator}>
               <View style={styles.statusIndicatorDot} />
               <Text style={styles.statusIndicatorText}>
@@ -956,6 +1033,10 @@ export default function ChatScreen() {
                   ? "Recording — tap to stop"
                   : isTranscribing
                   ? "Vex is decoding your audio..."
+                  : isUploadingFile
+                  ? "Uploading file to Vex..."
+                  : isGeneratingImage
+                  ? "Vex is painting your reality..."
                   : "Uploading image to Vex..."}
               </Text>
               <ActivityIndicator size="small" color={C.neon} />

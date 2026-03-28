@@ -176,3 +176,13 @@
 - [x] Ensure all interactive labels are bright enough for kids (13+) to read comfortably
 - [x] TypeScript check + tests passing (0 errors, 25/25)
 - [x] Checkpoint saved
+
+## Premium Voice & Features Upgrade (v5.0)
+- [x] Replace expo-speech with server-side Microsoft Edge TTS (premium neural voice)
+- [x] Add /tts endpoint on server returning audio base64 via msedge-tts
+- [x] Use "en-US-GuyNeural" (deep, clear, natural male voice) for Vex
+- [x] Play TTS audio via expo-audio on device (not expo-speech)
+- [x] Add file upload support (PDFs, text docs) — Vex reads and analyzes
+- [x] Add AI image generation — user can ask Vex to "draw" anything
+- [x] Show generated images inline in chat bubbles
+- [x] Add "Draw for me" quick action button in chat toolbar
