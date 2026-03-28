@@ -1,19 +1,25 @@
 /** @type {const} */
 const themeColors = {
-  // Kora Vex — Neon Green Cyberpunk Alien Theme (dark mode only)
-  primary:    { light: '#00FF41', dark: '#00FF41' },   // Neon matrix green
-  background: { light: '#000000', dark: '#000000' },   // Pure black
-  surface:    { light: '#0D1117', dark: '#0D1117' },   // Dark card surface
-  foreground: { light: '#E0FFE0', dark: '#E0FFE0' },   // Light green-white text
-  muted:      { light: '#4A7A4A', dark: '#4A7A4A' },   // Dim green muted text
-  border:     { light: '#1A2A1A', dark: '#1A2A1A' },   // Subtle green border
-  success:    { light: '#00FF41', dark: '#00FF41' },   // Neon green success
-  warning:    { light: '#FFD700', dark: '#FFD700' },   // Gold warning
-  error:      { light: '#FF3366', dark: '#FF3366' },   // Hot pink error
-  accent:     { light: '#FF00FF', dark: '#FF00FF' },   // Magenta accent
-  vexBubble:  { light: '#0D1A0D', dark: '#0D1A0D' },   // Vex message bubble bg
-  userBubble: { light: '#0A1F0A', dark: '#0A1F0A' },   // User message bubble bg
-  tint:       { light: '#00FF41', dark: '#00FF41' },   // Tab bar active tint
+  // Core — always dark, no light mode for Kora Vex
+  primary:     { light: '#00FF41', dark: '#00FF41' },   // Neon green — VEX signature
+  background:  { light: '#000000', dark: '#000000' },   // Pure black
+  surface:     { light: '#0A0A0A', dark: '#0A0A0A' },   // Near-black cards
+  surface2:    { light: '#111111', dark: '#111111' },   // Slightly elevated surface
+  foreground:  { light: '#FFFFFF', dark: '#FFFFFF' },   // Pure white text
+  muted:       { light: '#8A9BA8', dark: '#8A9BA8' },   // Muted text
+  border:      { light: '#1A2A1A', dark: '#1A2A1A' },   // Dark green-tinted border
+  borderGlow:  { light: '#00FF4130', dark: '#00FF4130' }, // Glowing green border
+  success:     { light: '#00FF41', dark: '#00FF41' },   // Same as primary
+  warning:     { light: '#FFD700', dark: '#FFD700' },   // Gold
+  error:       { light: '#FF3B30', dark: '#FF3B30' },   // Red
+
+  // VEX Brand extras
+  neonGreen:   { light: '#00FF41', dark: '#00FF41' },   // Bright neon
+  neonDim:     { light: '#00C832', dark: '#00C832' },   // Dimmer neon for secondary
+  neonGlow:    { light: '#00FF4120', dark: '#00FF4120' }, // Transparent glow
+  cosmic:      { light: '#001A00', dark: '#001A00' },   // Deep space green-black
+  gold:        { light: '#FFD700', dark: '#FFD700' },   // VEX Coin gold
+  tint:        { light: '#00FF41', dark: '#00FF41' },   // Tab bar active tint
 };
 
 module.exports = { themeColors };

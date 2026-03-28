@@ -106,3 +106,51 @@
 - [x] Headlines data integrity tests
 - [x] Image message validation tests
 - [x] Mode fallback tests
+
+## Bug Fixes (v2.1)
+- [x] Fix TTS voice output — Vex not speaking on device (expo-speech native setup)
+- [x] Fix mic recording — record button not capturing audio / no response
+- [x] Fix voice transcription flow end-to-end (record → upload → transcribe → fill input)
+- [x] Update Vex crash year from "23 years ago" to 1972 in system prompt
+- [x] Update Vex crash year in onboarding screen text
+- [x] Update Vex crash year in all UI strings and lore cards
+
+## Gen X Personality & UI Overhaul (v2.1)
+- [x] Update system prompt with full Gen X nostalgia personality (1972 crash, watched all of human culture evolve)
+- [x] Add Gen X cultural reference examples to system prompt (Atari, VHS, dial-up, Nirvana, etc.)
+- [x] Fix TTS voice — setAudioModeAsync before speak, strip markdown asterisks before speaking
+- [x] Fix mic recording race condition — useEffect listener on recorderState for URI availability
+- [x] Overhaul chat UI: markdown rendering for bold/italic in Vex responses
+- [x] Add message copy button (long press or tap icon)
+- [x] Add smooth scroll-to-bottom button when user scrolls up
+- [x] Improve input bar: auto-grow textarea, character count, send on Enter
+- [x] Add Vex "thinking" animation with alien flavor text
+- [x] Add message timestamps on tap
+- [x] Add haptic on message receive
+- [x] Improve header with online status pulse animation
+- [x] Add swipe-to-clear gesture on messages
+- [x] Update onboarding with Gen X flavor text
+
+## Publish-Ready Fixes (v2.2)
+- [x] Fix EXPO_PUBLIC_API_BASE_URL — embed correct server URL in native builds (auto-injected by Manus on publish)
+- [x] Add expo-speech config plugin to app.config.ts for iOS
+- [x] Add iOS NSMicrophoneUsageDescription to app.config.ts
+- [x] Verify recording stop/URI pattern matches expo-audio SDK 54 docs
+- [x] TypeScript clean check (0 errors)
+- [x] All tests passing (25/25)
+- [x] Final checkpoint saved
+
+## Billionaire UI Overhaul (v3.0)
+- [x] Upload all Vex brand photos to CDN
+- [x] Generate premium cosmic background art
+- [x] Overhaul theme with glowing neon tokens and premium typography
+- [x] Rebuild tab bar with glowing neon icons (always visible, not dark)
+- [x] Rebuild onboarding with cinematic Vex imagery
+- [x] Rebuild chat screen with premium Vex avatar header and cosmic bubbles
+- [x] Rebuild Lore screen with premium card design
+- [x] Rebuild Settings with premium Vex profile card
+- [x] Fix EXPO_PUBLIC_API_BASE_URL for native builds (auto-injected by Manus on publish)
+- [x] Fix TTS setAudioModeAsync + expo-speech plugin in app.config
+- [x] Fix mic recording stop/URI pattern
+- [x] Final TypeScript check + all tests passing (25/25, 0 TS errors)
+- [x] Final checkpoint saved

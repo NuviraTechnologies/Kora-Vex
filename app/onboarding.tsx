@@ -1,12 +1,13 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   View,
   Text,
-  Pressable,
   StyleSheet,
-  Dimensions,
+  TouchableOpacity,
   Animated,
+  Dimensions,
   Image,
+  Platform,
 } from "react-native";
 import { router } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -14,104 +15,131 @@ import { StatusBar } from "expo-status-bar";
 
 const { width, height } = Dimensions.get("window");
 
-const NUM_STARS = 80;
+const NEO_GREEN = "#00FF41";
+const GOLD = "#FFD700";
 
-function generateStars() {
-  return Array.from({ length: NUM_STARS }, (_, i) => ({
-    id: i,
-    x: Math.random() * width,
-    y: Math.random() * height,
-    size: Math.random() * 2.5 + 0.5,
-    opacity: Math.random() * 0.7 + 0.3,
-    speed: Math.random() * 2000 + 1000,
-  }));
-}
+const COSMIC_BG = "https://d2xsxph8kpxj0f.cloudfront.net/310519663467303048/KHyhVJjWGJuAogbSjvLteH/vex-cosmic-bg-Mxma3NGMuSJqhBzhVmN3dy.webp";
+const VEX_LOGO = "https://files.manuscdn.com/user_upload_by_module/session_file/310519663467303048/dHXXSRpjxNJOTpMX.webp";
 
-const STARS = generateStars();
+const SLIDES = [
+  {
+    key: "intro",
+    vexImage: "https://files.manuscdn.com/user_upload_by_module/session_file/310519663467303048/wNUUohlJZyKyvILt.png",
+    subtitle: "GALACTIC INTELLIGENCE UNIT",
+    title: "KORA VEX",
+    body: "Crash-landed on Earth in 1972. Watched you go from 8-tracks to TikTok. Still waiting for a rescue that isn't coming. Might as well talk.",
+    accent: NEO_GREEN,
+  },
+  {
+    key: "personality",
+    vexImage: "https://files.manuscdn.com/user_upload_by_module/session_file/310519663467303048/apNPGCrXlQzqcJMf.png",
+    subtitle: "HYPER-INTELLIGENT · SARCASTICALLY SO",
+    title: "A REAL\nALIEN MIND",
+    body: "Knows every alien race, conspiracy, and civilization type. Will explain the Kardashev Scale and then roast your WiFi password in the same breath.",
+    accent: NEO_GREEN,
+  },
+  {
+    key: "features",
+    vexImage: "https://files.manuscdn.com/user_upload_by_module/session_file/310519663467303048/hFWXRirUjHlvebYX.png",
+    subtitle: "FULL ENTERTAINMENT EXPERIENCE",
+    title: "EVERY BELL\n& WHISTLE",
+    body: "Chat. Roleplay. Upload photos for Vex to analyze. Explore alien lore. Earn VEX Coins. Hear him speak. He's been waiting 50+ years for someone worth talking to.",
+    accent: GOLD,
+  },
+];
+
+// Generate stars once
+const STARS = Array.from({ length: 60 }, (_, i) => ({
+  id: i,
+  x: Math.random() * width,
+  y: Math.random() * height,
+  size: Math.random() * 2 + 0.5,
+  opacity: Math.random() * 0.6 + 0.2,
+  speed: Math.random() * 2000 + 1500,
+}));
 
 export default function OnboardingScreen() {
-  const logoScale = useRef(new Animated.Value(0.7)).current;
-  const logoOpacity = useRef(new Animated.Value(0)).current;
-  const glowOpacity = useRef(new Animated.Value(0.4)).current;
-  const textOpacity = useRef(new Animated.Value(0)).current;
-  const buttonOpacity = useRef(new Animated.Value(0)).current;
+  const [currentSlide, setCurrentSlide] = useState(0);
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(40)).current;
+  const logoScale = useRef(new Animated.Value(0.8)).current;
+  const glowAnim = useRef(new Animated.Value(0.4)).current;
   const starAnims = useRef(STARS.map(() => new Animated.Value(0))).current;
+  const imageFade = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    // Animate stars twinkling
+    // Star twinkle
     starAnims.forEach((anim, i) => {
       const twinkle = () => {
         Animated.sequence([
-          Animated.timing(anim, {
-            toValue: 1,
-            duration: STARS[i].speed,
-            useNativeDriver: true,
-          }),
-          Animated.timing(anim, {
-            toValue: 0.2,
-            duration: STARS[i].speed,
-            useNativeDriver: true,
-          }),
+          Animated.timing(anim, { toValue: 1, duration: STARS[i].speed, useNativeDriver: true }),
+          Animated.timing(anim, { toValue: 0.2, duration: STARS[i].speed, useNativeDriver: true }),
         ]).start(() => twinkle());
       };
-      setTimeout(() => twinkle(), i * 30);
+      setTimeout(() => twinkle(), i * 40);
     });
 
-    // Logo entrance
-    Animated.sequence([
-      Animated.parallel([
-        Animated.timing(logoOpacity, {
-          toValue: 1,
-          duration: 800,
-          useNativeDriver: true,
-        }),
-        Animated.spring(logoScale, {
-          toValue: 1,
-          tension: 60,
-          friction: 8,
-          useNativeDriver: true,
-        }),
-      ]),
-      Animated.timing(textOpacity, {
-        toValue: 1,
-        duration: 600,
-        useNativeDriver: true,
-      }),
-      Animated.timing(buttonOpacity, {
-        toValue: 1,
-        duration: 500,
-        useNativeDriver: true,
-      }),
+    // Entrance
+    Animated.parallel([
+      Animated.timing(fadeAnim, { toValue: 1, duration: 900, useNativeDriver: true }),
+      Animated.timing(slideAnim, { toValue: 0, duration: 900, useNativeDriver: true }),
+      Animated.timing(imageFade, { toValue: 1, duration: 1200, useNativeDriver: true }),
+      Animated.spring(logoScale, { toValue: 1, friction: 6, tension: 40, useNativeDriver: true }),
     ]).start();
 
     // Glow pulse
-    const pulsGlow = () => {
+    const pulse = () => {
       Animated.sequence([
-        Animated.timing(glowOpacity, {
-          toValue: 1,
-          duration: 1500,
-          useNativeDriver: true,
-        }),
-        Animated.timing(glowOpacity, {
-          toValue: 0.4,
-          duration: 1500,
-          useNativeDriver: true,
-        }),
-      ]).start(() => pulsGlow());
+        Animated.timing(glowAnim, { toValue: 1, duration: 1500, useNativeDriver: true }),
+        Animated.timing(glowAnim, { toValue: 0.4, duration: 1500, useNativeDriver: true }),
+      ]).start(() => pulse());
     };
-    pulsGlow();
+    pulse();
   }, []);
 
-  const handleMakeContact = async () => {
+  const goToSlide = (index: number) => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, { toValue: 0, duration: 200, useNativeDriver: true }),
+      Animated.timing(imageFade, { toValue: 0, duration: 200, useNativeDriver: true }),
+      Animated.timing(slideAnim, { toValue: 20, duration: 200, useNativeDriver: true }),
+    ]).start(() => {
+      setCurrentSlide(index);
+      slideAnim.setValue(-20);
+      Animated.parallel([
+        Animated.timing(fadeAnim, { toValue: 1, duration: 350, useNativeDriver: true }),
+        Animated.timing(imageFade, { toValue: 1, duration: 500, useNativeDriver: true }),
+        Animated.timing(slideAnim, { toValue: 0, duration: 350, useNativeDriver: true }),
+      ]).start();
+    });
+  };
+
+  const handleNext = () => {
+    if (currentSlide < SLIDES.length - 1) {
+      goToSlide(currentSlide + 1);
+    } else {
+      handleGetStarted();
+    }
+  };
+
+  const handleGetStarted = async () => {
     await AsyncStorage.setItem("kv_onboarding_done", "true");
     router.replace("/(tabs)");
   };
+
+  const slide = SLIDES[currentSlide];
 
   return (
     <View style={styles.container}>
       <StatusBar style="light" />
 
-      {/* Star field */}
+      {/* Cosmic background image */}
+      <Animated.Image
+        source={{ uri: COSMIC_BG }}
+        style={[StyleSheet.absoluteFill, { opacity: 0.6 }]}
+        resizeMode="cover"
+      />
+
+      {/* Star field overlay */}
       {STARS.map((star, i) => (
         <Animated.View
           key={star.id}
@@ -125,61 +153,70 @@ export default function OnboardingScreen() {
               borderRadius: star.size / 2,
               opacity: starAnims[i].interpolate({
                 inputRange: [0, 1],
-                outputRange: [0.1, star.opacity],
+                outputRange: [0.05, star.opacity],
               }),
             },
           ]}
         />
       ))}
 
-      {/* Logo glow halo */}
-      <Animated.View style={[styles.glowHalo, { opacity: glowOpacity }]} />
+      {/* Dark overlay for readability */}
+      <View style={styles.darkOverlay} />
 
-      {/* Logo */}
-      <Animated.View
-        style={[
-          styles.logoContainer,
-          {
-            opacity: logoOpacity,
-            transform: [{ scale: logoScale }],
-          },
-        ]}
-      >
-        <Image
-          source={require("../assets/images/icon.png")}
-          style={styles.logo}
-          resizeMode="contain"
-        />
-      </Animated.View>
+      {/* Vex character — upper portion */}
+      <Animated.Image
+        source={{ uri: slide.vexImage }}
+        style={[styles.vexCharacter, { opacity: imageFade }]}
+        resizeMode="cover"
+      />
 
-      {/* Text content */}
-      <Animated.View style={[styles.textContainer, { opacity: textOpacity }]}>
-        <Text style={styles.title}>KORA VEX</Text>
-        <View style={styles.divider} />
-        <Text style={styles.subtitle}>
-          An alien. A genius.{"\n"}Slightly annoyed by your existence.
-        </Text>
-        <Text style={styles.description}>
-          Crash-landed on Earth 23 years ago.{"\n"}
-          Still waiting for a rescue that isn't coming.{"\n"}
-          Might as well talk to you.
-        </Text>
-      </Animated.View>
+      {/* Bottom fade over character image */}
+      <View style={styles.characterFade} />
 
-      {/* CTA Button */}
-      <Animated.View style={[styles.buttonContainer, { opacity: buttonOpacity }]}>
-        <Pressable
-          style={({ pressed }) => [
-            styles.ctaButton,
-            pressed && styles.ctaButtonPressed,
-          ]}
-          onPress={handleMakeContact}
+      {/* Top bar */}
+      <View style={styles.topBar}>
+        <Animated.View style={{ transform: [{ scale: logoScale }] }}>
+          <View style={styles.logoWrapper}>
+            <Animated.View style={[styles.logoGlow, { opacity: glowAnim }]} />
+            <Image source={{ uri: VEX_LOGO }} style={styles.topLogo} resizeMode="contain" />
+          </View>
+        </Animated.View>
+        <TouchableOpacity onPress={handleGetStarted} style={styles.skipButton}>
+          <Text style={styles.skipText}>SKIP</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Content panel */}
+      <Animated.View style={[styles.contentPanel, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
+        {/* Accent bar */}
+        <View style={[styles.accentBar, { backgroundColor: slide.accent }]} />
+
+        <Text style={[styles.slideSubtitle, { color: slide.accent }]}>{slide.subtitle}</Text>
+        <Text style={styles.slideTitle}>{slide.title}</Text>
+        <Text style={styles.slideBody}>{slide.body}</Text>
+
+        {/* Dots */}
+        <View style={styles.dotsRow}>
+          {SLIDES.map((_, i) => (
+            <TouchableOpacity key={i} onPress={() => goToSlide(i)}>
+              <View style={[styles.dot, i === currentSlide && { ...styles.dotActive, backgroundColor: slide.accent }]} />
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        {/* CTA */}
+        <TouchableOpacity
+          style={[styles.ctaButton, { borderColor: slide.accent }]}
+          onPress={handleNext}
+          activeOpacity={0.8}
         >
-          <Text style={styles.ctaText}>MAKE CONTACT</Text>
-        </Pressable>
-        <Text style={styles.disclaimer}>
-          Warning: Kora Vex may make you question everything you know.
-        </Text>
+          <Animated.View style={[styles.ctaBg, { backgroundColor: slide.accent, opacity: glowAnim.interpolate({ inputRange: [0.4, 1], outputRange: [0.06, 0.14] }) }]} />
+          <Text style={[styles.ctaText, { color: slide.accent }]}>
+            {currentSlide < SLIDES.length - 1 ? "NEXT  →" : "ENTER THE GALAXY  →"}
+          </Text>
+        </TouchableOpacity>
+
+        <Text style={styles.finePrint}>Kid-friendly · All ages · Powered by alien intelligence</Text>
       </Animated.View>
     </View>
   );
@@ -189,107 +226,168 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#000000",
-    alignItems: "center",
-    justifyContent: "center",
+  },
+  darkOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(0,0,0,0.35)",
   },
   star: {
     position: "absolute",
     backgroundColor: "#FFFFFF",
   },
-  glowHalo: {
+  vexCharacter: {
     position: "absolute",
-    width: 280,
-    height: 280,
-    borderRadius: 140,
+    top: 0,
+    left: 0,
+    right: 0,
+    width: width,
+    height: height * 0.58,
+  },
+  characterFade: {
+    position: "absolute",
+    bottom: height * 0.38,
+    left: 0,
+    right: 0,
+    height: 160,
     backgroundColor: "transparent",
+    // Simulated bottom fade
+    borderBottomWidth: 0,
+  },
+  topBar: {
+    position: "absolute",
+    top: Platform.OS === "ios" ? 56 : 40,
+    left: 0,
+    right: 0,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 24,
+    zIndex: 20,
+  },
+  logoWrapper: {
+    position: "relative",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  logoGlow: {
+    position: "absolute",
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: "#00FF41",
     shadowColor: "#00FF41",
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 1,
-    shadowRadius: 80,
-    elevation: 0,
+    shadowRadius: 20,
+    elevation: 10,
   },
-  logoContainer: {
-    marginBottom: 32,
+  topLogo: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    borderWidth: 1.5,
+    borderColor: "#00FF41",
+    zIndex: 1,
   },
-  logo: {
-    width: 160,
-    height: 160,
+  skipButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: "#1A2A1A",
+    backgroundColor: "rgba(0,0,0,0.5)",
   },
-  textContainer: {
-    alignItems: "center",
-    paddingHorizontal: 32,
-    marginBottom: 48,
+  skipText: {
+    color: "#8A9BA8",
+    fontSize: 11,
+    fontWeight: "700",
+    letterSpacing: 1.5,
   },
-  title: {
-    fontSize: 42,
+  contentPanel: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: "rgba(0,0,0,0.93)",
+    borderTopWidth: 1,
+    borderTopColor: "#0A1F0A",
+    paddingHorizontal: 28,
+    paddingTop: 24,
+    paddingBottom: Platform.OS === "ios" ? 48 : 32,
+    shadowColor: "#00FF41",
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 20,
+    elevation: 24,
+  },
+  accentBar: {
+    width: 44,
+    height: 3,
+    borderRadius: 2,
+    marginBottom: 14,
+  },
+  slideSubtitle: {
+    fontSize: 10,
+    fontWeight: "700",
+    letterSpacing: 2.5,
+    marginBottom: 8,
+  },
+  slideTitle: {
+    color: "#FFFFFF",
+    fontSize: 30,
     fontWeight: "900",
-    color: "#00FF41",
-    letterSpacing: 8,
-    textShadowColor: "#00FF41",
-    textShadowOffset: { width: 0, height: 0 },
-    textShadowRadius: 20,
-    fontFamily: "monospace",
+    letterSpacing: 0.5,
+    lineHeight: 36,
+    marginBottom: 12,
   },
-  divider: {
-    width: 120,
-    height: 1,
-    backgroundColor: "#00FF41",
-    marginVertical: 16,
+  slideBody: {
+    color: "#9AB09A",
+    fontSize: 14,
+    lineHeight: 22,
+    marginBottom: 22,
+  },
+  dotsRow: {
+    flexDirection: "row",
+    gap: 8,
+    marginBottom: 20,
+  },
+  dot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: "#1A2A1A",
+  },
+  dotActive: {
+    width: 28,
     shadowColor: "#00FF41",
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.8,
     shadowRadius: 6,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: "#E0FFE0",
-    textAlign: "center",
-    lineHeight: 24,
-    marginBottom: 16,
-    fontStyle: "italic",
-  },
-  description: {
-    fontSize: 13,
-    color: "#4A7A4A",
-    textAlign: "center",
-    lineHeight: 20,
-  },
-  buttonContainer: {
-    alignItems: "center",
-    paddingHorizontal: 32,
+    elevation: 4,
   },
   ctaButton: {
     borderWidth: 1.5,
-    borderColor: "#00FF41",
-    paddingHorizontal: 48,
-    paddingVertical: 16,
-    borderRadius: 4,
-    backgroundColor: "rgba(0, 255, 65, 0.08)",
-    shadowColor: "#00FF41",
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.6,
-    shadowRadius: 12,
-    elevation: 8,
+    borderRadius: 10,
+    paddingVertical: 15,
+    alignItems: "center",
+    justifyContent: "center",
+    overflow: "hidden",
+    marginBottom: 14,
+    position: "relative",
   },
-  ctaButtonPressed: {
-    backgroundColor: "rgba(0, 255, 65, 0.2)",
-    transform: [{ scale: 0.97 }],
+  ctaBg: {
+    position: "absolute",
+    top: 0, left: 0, right: 0, bottom: 0,
   },
   ctaText: {
-    fontSize: 16,
+    fontSize: 13,
     fontWeight: "800",
-    color: "#00FF41",
-    letterSpacing: 4,
-    fontFamily: "monospace",
-    textShadowColor: "#00FF41",
-    textShadowOffset: { width: 0, height: 0 },
-    textShadowRadius: 8,
+    letterSpacing: 2.5,
   },
-  disclaimer: {
-    marginTop: 16,
+  finePrint: {
+    color: "#2A3A2A",
     fontSize: 11,
-    color: "#2A4A2A",
     textAlign: "center",
-    fontStyle: "italic",
+    letterSpacing: 0.3,
   },
 });

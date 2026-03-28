@@ -1,17 +1,21 @@
-export const themeColors: {
-  primary: { light: string; dark: string };
+export declare const themeColors: {
+  primary:    { light: string; dark: string };
   background: { light: string; dark: string };
-  surface: { light: string; dark: string };
+  surface:    { light: string; dark: string };
+  surface2:   { light: string; dark: string };
   foreground: { light: string; dark: string };
-  muted: { light: string; dark: string };
-  border: { light: string; dark: string };
-  success: { light: string; dark: string };
-  warning: { light: string; dark: string };
-  error: { light: string; dark: string };
-  accent: { light: string; dark: string };
-  vexBubble: { light: string; dark: string };
-  userBubble: { light: string; dark: string };
-  tint: { light: string; dark: string };
+  muted:      { light: string; dark: string };
+  border:     { light: string; dark: string };
+  borderGlow: { light: string; dark: string };
+  success:    { light: string; dark: string };
+  warning:    { light: string; dark: string };
+  error:      { light: string; dark: string };
+  neonGreen:  { light: string; dark: string };
+  neonDim:    { light: string; dark: string };
+  neonGlow:   { light: string; dark: string };
+  cosmic:     { light: string; dark: string };
+  gold:       { light: string; dark: string };
+  tint:       { light: string; dark: string };
 };
 
 declare const themeConfig: {

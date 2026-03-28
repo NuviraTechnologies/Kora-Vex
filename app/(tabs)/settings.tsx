@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   View,
   Text,
@@ -9,26 +9,109 @@ import {
   Alert,
   Platform,
   Share,
+  Image,
+  ImageBackground,
 } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Haptics from "expo-haptics";
 import * as Speech from "expo-speech";
-import { ScreenContainer } from "@/components/screen-container";
+import { setAudioModeAsync } from "expo-audio";
 import { useVexCoins } from "@/lib/vex-coins";
-import { router } from "expo-router";
+import { VEX_ASSETS } from "@/vex-assets";
+
+const C = {
+  neon: "#00FF41",
+  neonDim: "#00CC33",
+  neonFaint: "#001a00",
+  black: "#000000",
+  deepBlack: "#010501",
+  surface: "#020f02",
+  surfaceHigh: "#041804",
+  border: "#003300",
+  textDim: "#004400",
+  textMid: "#00AA28",
+  orange: "#FF6600",
+  gold: "#FFD700",
+};
+
+const MONO = Platform.OS === "ios" ? "Courier New" : "monospace";
 
 const CHAT_STORAGE_KEY = "kv_chat_history";
 const ONBOARDING_KEY = "kv_onboarding_done";
 const HAPTICS_KEY = "kv_haptics_enabled";
 const VOICE_KEY = "kv_voice_enabled";
 
-interface Message {
-  role: "user" | "assistant";
-  content: string;
-  timestamp: number;
+function SettingRow({
+  label,
+  subtitle,
+  emoji,
+  value,
+  onToggle,
+}: {
+  label: string;
+  subtitle?: string;
+  emoji: string;
+  value: boolean;
+  onToggle: (v: boolean) => void;
+}) {
+  return (
+    <View style={styles.settingRow}>
+      <View style={styles.settingRowLeft}>
+        <View style={styles.settingEmojiBadge}>
+          <Text style={styles.settingEmoji}>{emoji}</Text>
+        </View>
+        <View style={styles.settingRowText}>
+          <Text style={styles.settingLabel}>{label}</Text>
+          {subtitle && <Text style={styles.settingSubtitle}>{subtitle}</Text>}
+        </View>
+      </View>
+      <Switch
+        value={value}
+        onValueChange={onToggle}
+        trackColor={{ false: C.border, true: C.neonDim }}
+        thumbColor={value ? C.neon : C.textDim}
+        ios_backgroundColor={C.border}
+      />
+    </View>
+  );
+}
+
+function ActionRow({
+  label,
+  subtitle,
+  emoji,
+  onPress,
+  danger,
+}: {
+  label: string;
+  subtitle?: string;
+  emoji: string;
+  onPress: () => void;
+  danger?: boolean;
+}) {
+  return (
+    <Pressable
+      style={({ pressed }) => [styles.settingRow, pressed && { opacity: 0.7 }]}
+      onPress={onPress}
+    >
+      <View style={styles.settingRowLeft}>
+        <View style={[styles.settingEmojiBadge, danger && styles.settingEmojiBadgeDanger]}>
+          <Text style={styles.settingEmoji}>{emoji}</Text>
+        </View>
+        <View style={styles.settingRowText}>
+          <Text style={[styles.settingLabel, danger && styles.settingLabelDanger]}>{label}</Text>
+          {subtitle && <Text style={styles.settingSubtitle}>{subtitle}</Text>}
+        </View>
+      </View>
+      <Text style={[styles.rowChevron, danger && styles.settingLabelDanger]}>›</Text>
+    </Pressable>
+  );
 }
 
 export default function SettingsScreen() {
+  const insets = useSafeAreaInsets();
   const [hapticsEnabled, setHapticsEnabled] = useState(true);
   const [voiceEnabled, setVoiceEnabled] = useState(true);
   const [isSpeaking, setIsSpeaking] = useState(false);
@@ -53,276 +136,288 @@ export default function SettingsScreen() {
   const toggleHaptics = async (val: boolean) => {
     setHapticsEnabled(val);
     await AsyncStorage.setItem(HAPTICS_KEY, val.toString());
-    if (val && Platform.OS !== "web") {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    }
+    if (val && Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
   };
 
   const toggleVoice = async (val: boolean) => {
     setVoiceEnabled(val);
     await AsyncStorage.setItem(VOICE_KEY, val.toString());
     haptic();
-    if (!val) await Speech.stop();
   };
 
   const testVoice = async () => {
     haptic();
-    const speaking = await Speech.isSpeakingAsync();
-    if (speaking) {
-      await Speech.stop();
+    if (isSpeaking) {
+      Speech.stop();
       setIsSpeaking(false);
       return;
     }
-    setIsSpeaking(true);
-    const voices = await Speech.getAvailableVoicesAsync();
-    const preferred = voices.find(
-      (v) =>
-        v.identifier.includes("en-GB") ||
-        v.identifier.includes("en-IE") ||
-        v.identifier.includes("Daniel") ||
-        v.identifier.includes("Moira")
-    );
-    Speech.speak(
-      "Greetings, human. This is Kora Vex. My voice has been calibrated for your primitive auditory system. You're welcome.",
-      {
-        voice: preferred?.identifier,
-        rate: 0.92,
-        pitch: 0.88,
-        language: "en-GB",
-        onDone: () => setIsSpeaking(false),
-        onStopped: () => setIsSpeaking(false),
-        onError: () => setIsSpeaking(false),
-      }
-    );
-  };
-
-  const clearChat = () => {
-    Alert.alert(
-      "Clear Chat History",
-      "Vex will forget everything you've discussed. Are you sure?",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Clear",
-          style: "destructive",
-          onPress: async () => {
-            haptic();
-            await AsyncStorage.removeItem(CHAT_STORAGE_KEY);
-            Alert.alert("Cleared", "Vex has wiped your conversation from the record. How convenient for you.");
-          },
-        },
-      ]
-    );
-  };
-
-  const shareChat = async () => {
-    haptic();
     try {
-      const stored = await AsyncStorage.getItem(CHAT_STORAGE_KEY);
-      if (!stored) {
-        Alert.alert("No Chat", "Nothing to share yet. Talk to Vex first.");
-        return;
+      if (Platform.OS !== "web") {
+        await setAudioModeAsync({ playsInSilentMode: true });
       }
-      const messages = JSON.parse(stored) as Message[];
-      const text = messages
-        .map((m) => `${m.role === "assistant" ? "KORA VEX" : "YOU"}: ${m.content}`)
-        .join("\n\n");
-      await Share.share({
-        message: `My conversation with Kora Vex — the alien AI\n\n${text}\n\n— Chat with Kora Vex`,
-        title: "My Kora Vex Conversation",
-      });
+      setIsSpeaking(true);
+      Speech.speak(
+        "Greetings, carbon-based life form. I am Kora Vex. I crashed here in 1972 and I have been mildly disappointed ever since. Your planet has excellent pizza, though. I will give you that.",
+        {
+          language: "en-GB",
+          pitch: 0.85,
+          rate: 0.92,
+          onDone: () => setIsSpeaking(false),
+          onError: () => setIsSpeaking(false),
+        }
+      );
     } catch {
-      Alert.alert("Share Failed", "Could not share the conversation.");
+      setIsSpeaking(false);
     }
   };
 
-  const resetOnboarding = () => {
+  const clearChat = () => {
+    haptic();
     Alert.alert(
-      "Replay Intro",
-      "This will show the intro screen again.",
+      "Clear Chat History",
+      "This will permanently delete all your conversations with Vex. He won't remember any of it. Not that he was particularly impressed anyway.",
       [
         { text: "Cancel", style: "cancel" },
         {
-          text: "Reset",
+          text: "Clear Everything",
+          style: "destructive",
           onPress: async () => {
-            haptic();
-            await AsyncStorage.removeItem(ONBOARDING_KEY);
-            router.replace("/onboarding");
+            await AsyncStorage.removeItem(CHAT_STORAGE_KEY);
+            if (Platform.OS !== "web") Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            Alert.alert("Done", "Chat history cleared. Fresh start. Vex is already judging your next message.");
           },
         },
       ]
     );
   };
 
+  const resetOnboarding = async () => {
+    haptic();
+    await AsyncStorage.removeItem(ONBOARDING_KEY);
+    Alert.alert("Done", "Onboarding reset. Restart the app to see the intro again.");
+  };
+
+  const shareApp = async () => {
+    haptic();
+    try {
+      await Share.share({
+        message: "I've been talking to Kora Vex — a sarcastic alien AI who crashed on Earth in 1972 and has opinions about everything. Download the app and try it yourself!",
+        title: "Kora Vex — Alien AI",
+      });
+    } catch {
+      // User cancelled
+    }
+  };
+
   return (
-    <ScreenContainer containerClassName="bg-background" safeAreaClassName="bg-background">
-      <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
-        {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>SETTINGS</Text>
-          <Text style={styles.headerSub}>CONFIGURE YOUR ALIEN INTERFACE</Text>
-        </View>
+    <View style={[styles.container, { paddingTop: insets.top }]}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
 
-        {/* Vex Stats Card */}
-        <View style={styles.statsCard}>
-          <Text style={styles.statsTitle}>YOUR VEX STATS</Text>
-          <View style={styles.statsRow}>
-            <View style={styles.statItem}>
-              <Text style={styles.statValue}>⚡ {coins}</Text>
-              <Text style={styles.statLabel}>VEX COINS</Text>
-            </View>
-            <View style={styles.statDivider} />
-            <View style={styles.statItem}>
-              <Text style={styles.statValue}>🔥 {streak}</Text>
-              <Text style={styles.statLabel}>DAY STREAK</Text>
-            </View>
-            <View style={styles.statDivider} />
-            <View style={styles.statItem}>
-              <Text style={styles.statValue}>👽</Text>
-              <Text style={styles.statLabel}>KORA VEX</Text>
-            </View>
-          </View>
-          <Text style={styles.statsNote}>
-            {coins >= 100
-              ? "Impressive dedication. Vex is... mildly impressed."
-              : "Keep chatting to earn more VEX Coins."}
-          </Text>
-        </View>
-
-        {/* Voice Settings */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>VOICE & AUDIO</Text>
-
-          <View style={styles.settingRow}>
-            <View style={styles.settingInfo}>
-              <Text style={styles.settingLabel}>Auto-Speak Responses</Text>
-              <Text style={styles.settingDesc}>Vex reads every response aloud (Northwestern European accent)</Text>
-            </View>
-            <Switch
-              value={voiceEnabled}
-              onValueChange={toggleVoice}
-              trackColor={{ false: "#1a1a1a", true: "#003300" }}
-              thumbColor={voiceEnabled ? "#00FF41" : "#444444"}
+        {/* Vex Profile Hero Card */}
+        <View style={styles.profileCard}>
+          <ImageBackground
+            source={{ uri: VEX_ASSETS.yacht }}
+            style={styles.profileBg}
+            imageStyle={styles.profileBgImage}
+          >
+            <LinearGradient
+              colors={["rgba(0,0,0,0.2)", "rgba(0,0,0,0.85)", C.black]}
+              style={StyleSheet.absoluteFill}
             />
-          </View>
-
-          <Pressable
-            style={({ pressed }) => [styles.actionRow, pressed && { opacity: 0.7 }]}
-            onPress={testVoice}
-          >
-            <Text style={styles.actionLabel}>{isSpeaking ? "⏹ Stop Voice Test" : "🔊 Test Vex's Voice"}</Text>
-            <Text style={styles.actionArrow}>›</Text>
-          </Pressable>
-        </View>
-
-        {/* Interaction Settings */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>INTERACTION</Text>
-
-          <View style={styles.settingRow}>
-            <View style={styles.settingInfo}>
-              <Text style={styles.settingLabel}>Haptic Feedback</Text>
-              <Text style={styles.settingDesc}>Vibration on button taps and Vex responses</Text>
+          </ImageBackground>
+          <View style={styles.profileContent}>
+            <View style={styles.profileAvatarWrap}>
+              <Image source={{ uri: VEX_ASSETS.logo }} style={styles.profileAvatar} />
+              <View style={styles.profileOnlineDot} />
             </View>
-            <Switch
-              value={hapticsEnabled}
-              onValueChange={toggleHaptics}
-              trackColor={{ false: "#1a1a1a", true: "#003300" }}
-              thumbColor={hapticsEnabled ? "#00FF41" : "#444444"}
-            />
-          </View>
-        </View>
-
-        {/* Data */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>DATA</Text>
-
-          <Pressable
-            style={({ pressed }) => [styles.actionRow, pressed && { opacity: 0.7 }]}
-            onPress={shareChat}
-          >
-            <Text style={styles.actionLabel}>📤 Share Conversation</Text>
-            <Text style={styles.actionArrow}>›</Text>
-          </Pressable>
-
-          <Pressable
-            style={({ pressed }) => [styles.actionRow, styles.actionRowDanger, pressed && { opacity: 0.7 }]}
-            onPress={clearChat}
-          >
-            <Text style={[styles.actionLabel, styles.actionLabelDanger]}>🗑 Clear Chat History</Text>
-            <Text style={[styles.actionArrow, styles.actionLabelDanger]}>›</Text>
-          </Pressable>
-
-          <Pressable
-            style={({ pressed }) => [styles.actionRow, pressed && { opacity: 0.7 }]}
-            onPress={resetOnboarding}
-          >
-            <Text style={styles.actionLabel}>↩ Replay Intro</Text>
-            <Text style={styles.actionArrow}>›</Text>
-          </Pressable>
-        </View>
-
-        {/* About */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>ABOUT</Text>
-          <View style={styles.aboutCard}>
-            <Text style={styles.aboutTitle}>KORA VEX · GALACTIC EDITION</Text>
-            <Text style={styles.aboutVersion}>Version 2.0</Text>
-            <Text style={styles.aboutDesc}>
-              An alien intelligence from Zeta Reticuli, stranded on Earth and available for your entertainment.
-              Features: AI chat with full alien personality, voice output (Northwestern European accent),
-              image analysis, 6 roleplay modes, VEX Coin rewards, alien news ticker, and voice input.
+            <Text style={styles.profileName}>KORA VEX</Text>
+            <Text style={styles.profileTitle}>Alien Intelligence · Gen X · Zeta Reticuli</Text>
+            <Text style={styles.profileBio}>
+              "Crashed here in 1972. Still waiting for someone to come get me. In the meantime, I answer your questions. You're welcome."
             </Text>
+
+            {/* Stats row */}
+            <View style={styles.statsRow}>
+              <View style={styles.statItem}>
+                <Text style={styles.statValue}>{coins}</Text>
+                <Text style={styles.statLabel}>VEX COINS</Text>
+              </View>
+              <View style={styles.statDivider} />
+              <View style={styles.statItem}>
+                <Text style={styles.statValue}>{streak}</Text>
+                <Text style={styles.statLabel}>DAY STREAK</Text>
+              </View>
+              <View style={styles.statDivider} />
+              <View style={styles.statItem}>
+                <Text style={styles.statValue}>1972</Text>
+                <Text style={styles.statLabel}>CRASH YEAR</Text>
+              </View>
+            </View>
           </View>
         </View>
 
-        {/* Vex Quote */}
-        <View style={styles.quoteContainer}>
-          <Text style={styles.quoteText}>
-            "I have crossed 39 light years to get here. The least you can do is give me a 5-star review."
-          </Text>
-          <Text style={styles.quoteAuthor}>— Kora Vex, probably</Text>
+        {/* Voice section */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>🔊 VOICE & AUDIO</Text>
+          </View>
+          <View style={styles.sectionCard}>
+            <SettingRow
+              label="Vex Voice Output"
+              subtitle="Vex speaks his responses aloud"
+              emoji="🗣️"
+              value={voiceEnabled}
+              onToggle={toggleVoice}
+            />
+            <View style={styles.rowDivider} />
+            <ActionRow
+              label={isSpeaking ? "Stop Speaking" : "Test Vex's Voice"}
+              subtitle="Hear what Vex sounds like"
+              emoji={isSpeaking ? "🔇" : "🎙️"}
+              onPress={testVoice}
+            />
+          </View>
         </View>
 
-        <View style={{ height: 40 }} />
+        {/* Haptics section */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>📳 HAPTICS</Text>
+          </View>
+          <View style={styles.sectionCard}>
+            <SettingRow
+              label="Haptic Feedback"
+              subtitle="Vibration on button taps"
+              emoji="📳"
+              value={hapticsEnabled}
+              onToggle={toggleHaptics}
+            />
+          </View>
+        </View>
+
+        {/* Data section */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>💾 DATA</Text>
+          </View>
+          <View style={styles.sectionCard}>
+            <ActionRow
+              label="Share Kora Vex"
+              subtitle="Tell others about this alien"
+              emoji="📤"
+              onPress={shareApp}
+            />
+            <View style={styles.rowDivider} />
+            <ActionRow
+              label="Reset Onboarding"
+              subtitle="See the intro screens again"
+              emoji="🔄"
+              onPress={resetOnboarding}
+            />
+            <View style={styles.rowDivider} />
+            <ActionRow
+              label="Clear Chat History"
+              subtitle="Delete all conversations"
+              emoji="🗑️"
+              onPress={clearChat}
+              danger
+            />
+          </View>
+        </View>
+
+        {/* About section */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>ℹ️ ABOUT</Text>
+          </View>
+          <View style={styles.sectionCard}>
+            <View style={styles.aboutRow}>
+              <Text style={styles.aboutLabel}>App Version</Text>
+              <Text style={styles.aboutValue}>2.0.0</Text>
+            </View>
+            <View style={styles.rowDivider} />
+            <View style={styles.aboutRow}>
+              <Text style={styles.aboutLabel}>AI Model</Text>
+              <Text style={styles.aboutValue}>Gemini 2.5 Flash</Text>
+            </View>
+            <View style={styles.rowDivider} />
+            <View style={styles.aboutRow}>
+              <Text style={styles.aboutLabel}>Vex Origin</Text>
+              <Text style={styles.aboutValue}>Zeta Reticuli</Text>
+            </View>
+            <View style={styles.rowDivider} />
+            <View style={styles.aboutRow}>
+              <Text style={styles.aboutLabel}>Earth Arrival</Text>
+              <Text style={styles.aboutValue}>1972</Text>
+            </View>
+          </View>
+        </View>
+
+        {/* Footer */}
+        <View style={styles.footer}>
+          <Image source={{ uri: VEX_ASSETS.logo }} style={styles.footerLogo} />
+          <Text style={styles.footerText}>KORA VEX</Text>
+          <Text style={styles.footerSubtext}>
+            "I've been on this planet for over 50 years.{"\n"}You still haven't figured out parking."
+          </Text>
+          <Text style={styles.footerCopy}>© 2024 VEX INTELLIGENCE DIVISION</Text>
+        </View>
+
       </ScrollView>
-    </ScreenContainer>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  scroll: { flex: 1 },
-  header: { paddingHorizontal: 20, paddingTop: 20, paddingBottom: 16 },
-  headerTitle: { color: "#00FF41", fontSize: 22, fontWeight: "800", letterSpacing: 3, fontFamily: Platform.OS === "ios" ? "Courier New" : "monospace" },
-  headerSub: { color: "#00AA28", fontSize: 10, letterSpacing: 2, marginTop: 2, fontFamily: Platform.OS === "ios" ? "Courier New" : "monospace" },
+  container: { flex: 1, backgroundColor: C.black },
+  scrollContent: { paddingBottom: 40 },
 
-  statsCard: { marginHorizontal: 16, marginBottom: 20, backgroundColor: "#001a00", borderWidth: 1, borderColor: "#00FF41", borderRadius: 14, padding: 16 },
-  statsTitle: { color: "#00FF41", fontSize: 11, fontWeight: "700", letterSpacing: 2, marginBottom: 12, fontFamily: Platform.OS === "ios" ? "Courier New" : "monospace" },
-  statsRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-around" },
-  statItem: { alignItems: "center", flex: 1 },
-  statValue: { color: "#00FF41", fontSize: 20, fontWeight: "800" },
-  statLabel: { color: "#00AA28", fontSize: 9, letterSpacing: 1, marginTop: 4, fontFamily: Platform.OS === "ios" ? "Courier New" : "monospace" },
-  statDivider: { width: 1, height: 40, backgroundColor: "#003300" },
-  statsNote: { color: "#005500", fontSize: 11, textAlign: "center", marginTop: 12, fontStyle: "italic" },
+  // Profile card
+  profileCard: { marginBottom: 24, overflow: "hidden" },
+  profileBg: { height: 200, width: "100%" },
+  profileBgImage: { opacity: 0.6 },
+  profileContent: { padding: 20, paddingTop: 0 },
+  profileAvatarWrap: { position: "relative", alignSelf: "center", marginBottom: 12, marginTop: -30 },
+  profileAvatar: { width: 80, height: 80, borderRadius: 40, borderWidth: 3, borderColor: C.neon, shadowColor: C.neon, shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.6, shadowRadius: 12 },
+  profileOnlineDot: { position: "absolute", bottom: 4, right: 4, width: 14, height: 14, borderRadius: 7, backgroundColor: C.neon, borderWidth: 2, borderColor: C.black },
+  profileName: { color: C.neon, fontSize: 22, fontWeight: "900", fontFamily: MONO, letterSpacing: 4, textAlign: "center" },
+  profileTitle: { color: C.textDim, fontSize: 11, fontFamily: MONO, letterSpacing: 1, textAlign: "center", marginTop: 4, marginBottom: 10 },
+  profileBio: { color: C.textMid, fontSize: 13, lineHeight: 20, textAlign: "center", fontStyle: "italic", marginBottom: 18 },
+  statsRow: { flexDirection: "row", alignItems: "center", justifyContent: "center", backgroundColor: C.surface, borderWidth: 1.5, borderColor: C.border, borderRadius: 16, padding: 16 },
+  statItem: { flex: 1, alignItems: "center" },
+  statValue: { color: C.neon, fontSize: 20, fontWeight: "900", fontFamily: MONO },
+  statLabel: { color: C.textDim, fontSize: 9, fontFamily: MONO, letterSpacing: 1, marginTop: 2 },
+  statDivider: { width: 1, height: 36, backgroundColor: C.border },
 
-  section: { marginHorizontal: 16, marginBottom: 20 },
-  sectionTitle: { color: "#00AA28", fontSize: 10, fontWeight: "700", letterSpacing: 2, marginBottom: 10, fontFamily: Platform.OS === "ios" ? "Courier New" : "monospace" },
-  settingRow: { flexDirection: "row", alignItems: "center", backgroundColor: "#001a00", borderWidth: 1, borderColor: "#003300", borderRadius: 12, padding: 14, marginBottom: 8 },
-  settingInfo: { flex: 1, marginRight: 12 },
-  settingLabel: { color: "#00FF41", fontSize: 14, fontWeight: "600" },
-  settingDesc: { color: "#005500", fontSize: 12, marginTop: 2 },
-  actionRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", backgroundColor: "#001a00", borderWidth: 1, borderColor: "#003300", borderRadius: 12, padding: 14, marginBottom: 8 },
-  actionRowDanger: { borderColor: "#330000", backgroundColor: "#0d0000" },
-  actionLabel: { color: "#00FF41", fontSize: 14, fontWeight: "600" },
-  actionLabelDanger: { color: "#FF4444" },
-  actionArrow: { color: "#00AA28", fontSize: 20 },
+  // Sections
+  section: { paddingHorizontal: 16, marginBottom: 20 },
+  sectionHeader: { marginBottom: 8, paddingHorizontal: 4 },
+  sectionTitle: { color: C.textDim, fontSize: 11, fontWeight: "900", fontFamily: MONO, letterSpacing: 2 },
+  sectionCard: { backgroundColor: C.surface, borderWidth: 1.5, borderColor: C.border, borderRadius: 18, overflow: "hidden" },
 
-  aboutCard: { backgroundColor: "#001a00", borderWidth: 1, borderColor: "#003300", borderRadius: 12, padding: 16 },
-  aboutTitle: { color: "#00FF41", fontSize: 14, fontWeight: "800", letterSpacing: 2, fontFamily: Platform.OS === "ios" ? "Courier New" : "monospace" },
-  aboutVersion: { color: "#00AA28", fontSize: 11, marginTop: 2, marginBottom: 10 },
-  aboutDesc: { color: "#005500", fontSize: 12, lineHeight: 18 },
+  // Rows
+  settingRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, paddingVertical: 14 },
+  settingRowLeft: { flexDirection: "row", alignItems: "center", gap: 12, flex: 1 },
+  settingEmojiBadge: { width: 36, height: 36, borderRadius: 10, backgroundColor: C.surfaceHigh, borderWidth: 1, borderColor: C.border, alignItems: "center", justifyContent: "center" },
+  settingEmojiBadgeDanger: { borderColor: "#FF3B30" },
+  settingEmoji: { fontSize: 18 },
+  settingRowText: { flex: 1 },
+  settingLabel: { color: C.neon, fontSize: 14, fontWeight: "700", fontFamily: MONO },
+  settingLabelDanger: { color: "#FF3B30" },
+  settingSubtitle: { color: C.textDim, fontSize: 11, fontFamily: MONO, marginTop: 2 },
+  rowChevron: { color: C.textDim, fontSize: 22, fontWeight: "300" },
+  rowDivider: { height: 1, backgroundColor: C.border, marginLeft: 64 },
 
-  quoteContainer: { marginHorizontal: 20, marginBottom: 8, paddingTop: 8, borderTopWidth: 1, borderTopColor: "#001a00" },
-  quoteText: { color: "#003300", fontSize: 12, fontStyle: "italic", lineHeight: 18, textAlign: "center" },
-  quoteAuthor: { color: "#002200", fontSize: 11, textAlign: "center", marginTop: 6 },
+  // About rows
+  aboutRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, paddingVertical: 14 },
+  aboutLabel: { color: C.textMid, fontSize: 13, fontFamily: MONO },
+  aboutValue: { color: C.neon, fontSize: 13, fontFamily: MONO, fontWeight: "700" },
+
+  // Footer
+  footer: { alignItems: "center", paddingHorizontal: 24, paddingTop: 10, paddingBottom: 20, gap: 8 },
+  footerLogo: { width: 48, height: 48, borderRadius: 24, borderWidth: 2, borderColor: C.border, opacity: 0.6 },
+  footerText: { color: C.textDim, fontSize: 14, fontWeight: "900", fontFamily: MONO, letterSpacing: 4 },
+  footerSubtext: { color: C.textDim, fontSize: 11, fontFamily: MONO, textAlign: "center", lineHeight: 18, fontStyle: "italic" },
+  footerCopy: { color: C.border, fontSize: 9, fontFamily: MONO, letterSpacing: 1, marginTop: 4 },
 });
