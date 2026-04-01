@@ -90,8 +90,7 @@ const config: ExpoConfig = {
         ],
         category: ["BROWSABLE", "DEFAULT"],
       },
-    ],
-    googleServicesFile: "./google-services.json"
+    ]
   },
   web: {
     bundler: "metro",
