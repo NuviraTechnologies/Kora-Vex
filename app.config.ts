@@ -98,7 +98,6 @@ const config: ExpoConfig = {
     output: "static",
     favicon: "./assets/images/favicon.png",
   },
-  privacyUrl: "https://nuviratechnologies.io/privacy",
   plugins: [
     "expo-router",
     [
