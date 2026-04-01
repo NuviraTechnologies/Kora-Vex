@@ -101,5 +101,6 @@
   },
   "overrides": {
     "lightningcss": "~1.27.0"
-  }
+  },
+  "packageManager": "pnpm@9.12.0"
 }
