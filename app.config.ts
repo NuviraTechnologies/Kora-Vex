@@ -61,10 +61,12 @@ const config: ExpoConfig = {
         "ITSAppUsesNonExemptEncryption": false,
         "NSMicrophoneUsageDescription": "Kora Vex needs microphone access to listen to your voice and respond.",
         "NSCameraUsageDescription": "Kora Vex needs camera access to analyze your world.",
-        "NSPhotoLibraryUsageDescription": "Kora Vex needs photo library access to analyze images."
+        "NSPhotoLibraryUsageDescription": "Kora Vex needs photo library access to analyze images.",
+        "NSPhotoLibraryAddUsageDescription": "Kora Vex needs to save analyzed images to your library."
       }
   },
   android: {
+    versionCode: 2,
     adaptiveIcon: {
       backgroundColor: "#000000",
       foregroundImage: "./assets/images/android-icon-foreground.png",
@@ -75,7 +77,7 @@ const config: ExpoConfig = {
     predictiveBackGestureEnabled: false,
     softwareKeyboardLayoutMode: "pan",
     package: env.androidPackage,
-    permissions: ["POST_NOTIFICATIONS", "RECORD_AUDIO", "CAMERA"],
+    permissions: ["POST_NOTIFICATIONS", "RECORD_AUDIO", "CAMERA", "INTERNET"],
     intentFilters: [
       {
         action: "VIEW",
@@ -89,12 +91,14 @@ const config: ExpoConfig = {
         category: ["BROWSABLE", "DEFAULT"],
       },
     ],
+    googleServicesFile: "./google-services.json"
   },
   web: {
     bundler: "metro",
     output: "static",
     favicon: "./assets/images/favicon.png",
   },
+  privacyUrl: "https://nuviratechnologies.io/privacy",
   plugins: [
     "expo-router",
     [
