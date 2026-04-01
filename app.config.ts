@@ -47,7 +47,7 @@ const config: ExpoConfig = {
   },
   name: env.appName,
   slug: env.appSlug,
-  version: "1.0.0",
+  version: "1.0.1",
   orientation: "portrait",
   icon: "./assets/images/icon.png",
   scheme: env.scheme,
@@ -56,9 +56,12 @@ const config: ExpoConfig = {
   ios: {
     supportsTablet: true,
     bundleIdentifier: env.iosBundleId,
-    buildNumber: "2",
+    buildNumber: "3",
     "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSMicrophoneUsageDescription": "Kora Vex needs microphone access to listen to your voice and respond.",
+        "NSCameraUsageDescription": "Kora Vex needs camera access to analyze your world.",
+        "NSPhotoLibraryUsageDescription": "Kora Vex needs photo library access to analyze images."
       }
   },
   android: {

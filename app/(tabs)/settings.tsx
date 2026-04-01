@@ -345,6 +345,32 @@ export default function SettingsScreen() {
           </View>
         </View>
 
+        {/* Legal section */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>⚖️ LEGAL</Text>
+          </View>
+          <View style={styles.sectionCard}>
+            <Pressable
+              onPress={() => {
+                Alert.alert(
+                  "Privacy Policy",
+                  "Kora Vex collects voice, camera, and chat data to provide AI features. Data is stored locally on your device. We do not sell your data. For full details, visit our privacy policy.",
+                  [{ text: "OK" }]
+                );
+              }}
+              style={({ pressed }) => [styles.settingRow, pressed && { opacity: 0.7 }]}
+            >
+              <View style={styles.settingRowLeft}>
+                <View style={styles.settingEmojiBadge}>
+                  <Text style={{ fontSize: 18 }}>🔒</Text>
+                </View>
+                <Text style={styles.settingLabel}>Privacy Policy</Text>
+              </View>
+              <Text style={{ color: C.textDim, fontSize: 12 }}>→</Text>
+            </Pressable>
+          </View>
+        </View>
         {/* About section */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
@@ -353,7 +379,7 @@ export default function SettingsScreen() {
           <View style={styles.sectionCard}>
             <View style={styles.aboutRow}>
               <Text style={styles.aboutLabel}>App Version</Text>
-              <Text style={styles.aboutValue}>2.0.0</Text>
+              <Text style={styles.aboutValue}>1.0.1</Text>
             </View>
             <View style={styles.rowDivider} />
             <View style={styles.aboutRow}>
