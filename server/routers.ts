@@ -119,14 +119,12 @@ export const appRouter = router({
         })
       )
       .mutation(async ({ input }) => {
-        // Write audio to temp file and transcribe via Groq/OpenAI Whisper API
+        // Write audio to temp file and transcribe via Forge API (Whisper-compatible)
         const ext = input.mimeType.includes("webm") ? "webm" : input.mimeType.includes("wav") ? "wav" : "m4a";
         const tmpFile = path.join(os.tmpdir(), `vex-voice-${Date.now()}.${ext}`);
         try {
           fs.writeFileSync(tmpFile, Buffer.from(input.base64, "base64"));
-          // Use Anthropic client for transcription via OpenAI-compatible endpoint
-          // Fallback: return placeholder if transcription not configured
-          const text = await transcribeWithWhisper(tmpFile, input.mimeType);
+          const text = await transcribeWithForge(tmpFile, input.mimeType);
           return { text };
         } finally {
           try { fs.unlinkSync(tmpFile); } catch {}
@@ -183,8 +181,7 @@ export const appRouter = router({
         return { url, textContent, fileName: input.fileName };
       }),
 
-    // AI Image Generation — uses Claude to describe what it would look like
-    // (Full image gen via Replicate can be added later with REPLICATE_API_KEY)
+    // AI Image Generation — uses built-in Forge image generation service
     generateImage: publicProcedure
       .input(
         z.object({
@@ -194,13 +191,17 @@ export const appRouter = router({
       )
       .mutation(async ({ input }) => {
         const fullPrompt = `${input.prompt}, ${input.style}`;
-        // If Replicate key is available, use it for real image generation
-        if (process.env.REPLICATE_API_KEY) {
-          const url = await generateWithReplicate(fullPrompt);
-          return { url };
+        try {
+          const result = await generateImageWithForge(fullPrompt);
+          return { url: result.url ?? "" };
+        } catch (err) {
+          // If Replicate key is available as fallback, use it
+          if (process.env.REPLICATE_API_KEY) {
+            const url = await generateWithReplicate(fullPrompt);
+            return { url };
+          }
+          throw err;
         }
-        // Fallback: return a placeholder cosmic image URL
-        return { url: "https://images.unsplash.com/photo-1462331940025-496dfbfc7564?w=512&q=80" };
       }),
   }),
 });
@@ -209,27 +210,35 @@ export type AppRouter = typeof appRouter;
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
-async function transcribeWithWhisper(filePath: string, mimeType: string): Promise<string> {
-  // Use OpenAI Whisper API if OPENAI_API_KEY is set, otherwise return placeholder
-  const openaiKey = process.env.OPENAI_API_KEY;
-  if (!openaiKey) {
-    return "[Voice transcription requires OPENAI_API_KEY — text input is available]";
+async function transcribeWithForge(filePath: string, mimeType: string): Promise<string> {
+  const forgeApiUrl = process.env.BUILT_IN_FORGE_API_URL;
+  const forgeApiKey = process.env.BUILT_IN_FORGE_API_KEY;
+  if (!forgeApiUrl || !forgeApiKey) {
+    throw new Error("Voice transcription service not configured");
   }
   const FormData = (await import("form-data")).default;
   const form = new FormData();
+  const ext = mimeType.split("/")[1] || "m4a";
   form.append("file", fs.createReadStream(filePath), {
-    filename: `audio.${mimeType.split("/")[1] || "m4a"}`,
+    filename: `audio.${ext}`,
     contentType: mimeType,
   });
   form.append("model", "whisper-1");
-  const response = await fetch("https://api.openai.com/v1/audio/transcriptions", {
+  const baseUrl = forgeApiUrl.endsWith("/") ? forgeApiUrl : `${forgeApiUrl}/`;
+  const fullUrl = `${baseUrl}v1/audio/transcriptions`;
+  const response = await fetch(fullUrl, {
     method: "POST",
-    headers: { Authorization: `Bearer ${openaiKey}`, ...form.getHeaders() },
+    headers: { Authorization: `Bearer ${forgeApiKey}`, ...form.getHeaders() },
     body: form as any,
   });
-  if (!response.ok) throw new Error(`Whisper transcription failed: ${response.statusText}`);
+  if (!response.ok) throw new Error(`Voice transcription failed: ${response.statusText}`);
   const data = (await response.json()) as { text: string };
   return data.text;
+}
+
+async function generateImageWithForge(prompt: string): Promise<{ url?: string }> {
+  const { generateImage: forgeGenerate } = await import("./_core/imageGeneration");
+  return forgeGenerate({ prompt });
 }
 
 async function generateWithReplicate(prompt: string): Promise<string> {

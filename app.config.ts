@@ -56,7 +56,7 @@ const config: ExpoConfig = {
   ios: {
     supportsTablet: true,
     bundleIdentifier: env.iosBundleId,
-    buildNumber: "4",
+    buildNumber: "5",
     "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
         "NSMicrophoneUsageDescription": "Kora Vex uses your microphone to record your voice so you can speak directly to Vex, an AI companion. Your voice is converted to text and sent to Vex to generate a spoken response. Audio is not stored or shared.",
