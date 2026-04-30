@@ -59,10 +59,10 @@ const config: ExpoConfig = {
     buildNumber: "4",
     "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
-        "NSMicrophoneUsageDescription": "Kora Vex needs microphone access to listen to your voice and respond.",
-        "NSCameraUsageDescription": "Kora Vex needs camera access to analyze your world.",
-        "NSPhotoLibraryUsageDescription": "Kora Vex needs photo library access to analyze images.",
-        "NSPhotoLibraryAddUsageDescription": "Kora Vex needs to save analyzed images to your library."
+        "NSMicrophoneUsageDescription": "Kora Vex uses your microphone to record your voice so you can speak directly to Vex, an AI companion. Your voice is converted to text and sent to Vex to generate a spoken response. Audio is not stored or shared.",
+        "NSCameraUsageDescription": "Kora Vex uses your camera to capture photos that you share with Vex for analysis and conversation. Images are sent to Vex to generate a contextual response and are not stored on external servers.",
+        "NSPhotoLibraryUsageDescription": "Kora Vex accesses your photo library so you can select images to share with Vex for analysis and discussion. Selected images are sent to Vex to generate a response and are not stored.",
+        "NSPhotoLibraryAddUsageDescription": "Kora Vex saves images to your photo library when you request to keep a photo that was shared during your conversation with Vex."
       }
   },
   android: {
@@ -115,8 +115,8 @@ const config: ExpoConfig = {
     [
       "expo-video",
       {
-        supportsBackgroundPlayback: true,
-        supportsPictureInPicture: true,
+        supportsBackgroundPlayback: false,
+        supportsPictureInPicture: false,
       },
     ],
     [
