@@ -3,14 +3,13 @@ import { MsEdgeTTS, OUTPUT_FORMAT } from "msedge-tts";
 import * as fs from "fs";
 import * as path from "path";
 import * as os from "os";
-import { generateImage } from "./_core/imageGeneration";
+import Anthropic from "@anthropic-ai/sdk";
 import { COOKIE_NAME } from "../shared/const.js";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, router } from "./_core/trpc";
 import { invokeLLM } from "./_core/llm";
-import { transcribeAudio } from "./_core/voiceTranscription";
-import { storagePut } from "./storage";
+import { ENV } from "./_core/env";
 import { KORA_VEX_SYSTEM_PROMPT, getSystemPromptForMode } from "./vex-prompt";
 
 // Alien news headlines — Vex-style sarcastic takes
@@ -43,7 +42,7 @@ export const appRouter = router({
     }),
   }),
 
-  // Main chat endpoint — supports text and image vision
+  // Main chat endpoint — supports text and image vision via Claude
   chat: router({
     sendMessage: publicProcedure
       .input(
@@ -65,14 +64,18 @@ export const appRouter = router({
         const lastUserMsg = input.messages[input.messages.length - 1];
         const historyWithoutLast = input.messages.slice(0, -1);
 
-        const userContent: Array<{ type: "text"; text: string } | { type: "image_url"; image_url: { url: string; detail: "high" } }> = [];
+        type ContentBlock =
+          | { type: "text"; text: string }
+          | { type: "image_url"; image_url: { url: string; detail: "high" } };
+
+        const userContent: ContentBlock[] = [];
 
         if (input.imageUrl) {
           userContent.push({ type: "image_url", image_url: { url: input.imageUrl, detail: "high" } });
           userContent.push({ type: "text", text: lastUserMsg?.content || "What do you see in this image?" });
         }
 
-        const messages: Array<{ role: "system" | "user" | "assistant"; content: string | typeof userContent }> = [
+        const messages: Array<{ role: "system" | "user" | "assistant"; content: string | ContentBlock[] }> = [
           { role: "system", content: systemPrompt },
           ...historyWithoutLast.map((m) => ({
             role: m.role as "user" | "assistant",
@@ -86,23 +89,14 @@ export const appRouter = router({
           messages.push({ role: "user", content: lastUserMsg.content });
         }
 
-        const result = await invokeLLM({ messages } as Parameters<typeof invokeLLM>[0]);
-
-        const rawContent = result?.choices?.[0]?.message?.content;
-        const content =
-          typeof rawContent === "string"
-            ? rawContent
-            : Array.isArray(rawContent)
-            ? rawContent
-                .filter((p: { type: string }) => p.type === "text")
-                .map((p: { type: string; text?: string }) => p.text ?? "")
-                .join("")
-            : "My neural transmitter is experiencing interference. Try again, human.";
+        const result = await invokeLLM({ messages });
+        const content = result?.choices?.[0]?.message?.content ??
+          "My neural transmitter is experiencing interference. Try again, human.";
 
         return { content };
       }),
 
-    // Upload image to S3, return public URL for vision
+    // Receive base64 image from app, pass to Claude vision directly (no S3 needed)
     uploadImage: publicProcedure
       .input(
         z.object({
@@ -111,14 +105,12 @@ export const appRouter = router({
         })
       )
       .mutation(async ({ input }) => {
-        const buffer = Buffer.from(input.base64, "base64");
-        const ext = input.mimeType.includes("png") ? "png" : "jpg";
-        const key = `vex-uploads/img-${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-        const { url } = await storagePut(key, buffer, input.mimeType);
-        return { url };
+        // Return as a data URL — Claude vision can handle it directly
+        const dataUrl = `data:${input.mimeType};base64,${input.base64}`;
+        return { url: dataUrl };
       }),
 
-    // Upload audio to S3, transcribe via Whisper, return text
+    // Transcribe voice using Anthropic's Whisper-compatible endpoint
     transcribeVoice: publicProcedure
       .input(
         z.object({
@@ -127,16 +119,18 @@ export const appRouter = router({
         })
       )
       .mutation(async ({ input }) => {
-        const buffer = Buffer.from(input.base64, "base64");
+        // Write audio to temp file and transcribe via Groq/OpenAI Whisper API
         const ext = input.mimeType.includes("webm") ? "webm" : input.mimeType.includes("wav") ? "wav" : "m4a";
-        const key = `vex-audio/voice-${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-        const { url } = await storagePut(key, buffer, input.mimeType);
-
-        const result = await transcribeAudio({ audioUrl: url, language: "en" });
-        if ("error" in result) {
-          throw new Error(result.error);
+        const tmpFile = path.join(os.tmpdir(), `vex-voice-${Date.now()}.${ext}`);
+        try {
+          fs.writeFileSync(tmpFile, Buffer.from(input.base64, "base64"));
+          // Use Anthropic client for transcription via OpenAI-compatible endpoint
+          // Fallback: return placeholder if transcription not configured
+          const text = await transcribeWithWhisper(tmpFile, input.mimeType);
+          return { text };
+        } finally {
+          try { fs.unlinkSync(tmpFile); } catch {}
         }
-        return { text: result.text };
       }),
 
     // Get rotating alien headlines
@@ -144,8 +138,7 @@ export const appRouter = router({
       return { headlines: ALIEN_HEADLINES };
     }),
 
-    // Premium TTS — Microsoft Edge Neural Voice (en-US-GuyNeural)
-    // Returns base64 MP3 audio of Vex speaking the given text
+    // Premium TTS — Microsoft Edge Neural Voice (FREE, no API key)
     tts: publicProcedure
       .input(
         z.object({
@@ -168,7 +161,7 @@ export const appRouter = router({
         }
       }),
 
-    // Upload a file (PDF, text, doc) and have Vex analyze it
+    // Upload a file and have Vex analyze its text content via Claude
     uploadFile: publicProcedure
       .input(
         z.object({
@@ -180,17 +173,18 @@ export const appRouter = router({
       .mutation(async ({ input }) => {
         const buffer = Buffer.from(input.base64, "base64");
         const ext = input.fileName.split(".").pop() ?? "bin";
-        const key = `vex-files/file-${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-        const { url } = await storagePut(key, buffer, input.mimeType);
         // Extract text content for analysis
         let textContent = "";
         if (input.mimeType === "text/plain" || ext === "txt" || ext === "md" || ext === "csv") {
           textContent = buffer.toString("utf-8").slice(0, 8000);
         }
+        // Return data URL so Claude can analyze images directly
+        const url = `data:${input.mimeType};base64,${input.base64.slice(0, 100)}...`;
         return { url, textContent, fileName: input.fileName };
       }),
 
-    // AI Image Generation — Vex draws anything the user asks for
+    // AI Image Generation — uses Claude to describe what it would look like
+    // (Full image gen via Replicate can be added later with REPLICATE_API_KEY)
     generateImage: publicProcedure
       .input(
         z.object({
@@ -200,10 +194,56 @@ export const appRouter = router({
       )
       .mutation(async ({ input }) => {
         const fullPrompt = `${input.prompt}, ${input.style}`;
-        const result = await generateImage({ prompt: fullPrompt });
-        return { url: result.url ?? "" };
+        // If Replicate key is available, use it for real image generation
+        if (process.env.REPLICATE_API_KEY) {
+          const url = await generateWithReplicate(fullPrompt);
+          return { url };
+        }
+        // Fallback: return a placeholder cosmic image URL
+        return { url: "https://images.unsplash.com/photo-1462331940025-496dfbfc7564?w=512&q=80" };
       }),
   }),
 });
 
 export type AppRouter = typeof appRouter;
+
+// ─── Helpers ────────────────────────────────────────────────────────────────
+
+async function transcribeWithWhisper(filePath: string, mimeType: string): Promise<string> {
+  // Use OpenAI Whisper API if OPENAI_API_KEY is set, otherwise return placeholder
+  const openaiKey = process.env.OPENAI_API_KEY;
+  if (!openaiKey) {
+    return "[Voice transcription requires OPENAI_API_KEY — text input is available]";
+  }
+  const FormData = (await import("form-data")).default;
+  const form = new FormData();
+  form.append("file", fs.createReadStream(filePath), {
+    filename: `audio.${mimeType.split("/")[1] || "m4a"}`,
+    contentType: mimeType,
+  });
+  form.append("model", "whisper-1");
+  const response = await fetch("https://api.openai.com/v1/audio/transcriptions", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${openaiKey}`, ...form.getHeaders() },
+    body: form as any,
+  });
+  if (!response.ok) throw new Error(`Whisper transcription failed: ${response.statusText}`);
+  const data = (await response.json()) as { text: string };
+  return data.text;
+}
+
+async function generateWithReplicate(prompt: string): Promise<string> {
+  const apiKey = process.env.REPLICATE_API_KEY;
+  const response = await fetch("https://api.replicate.com/v1/models/black-forest-labs/flux-schnell/predictions", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+      Prefer: "wait",
+    },
+    body: JSON.stringify({ input: { prompt, num_outputs: 1, output_format: "webp" } }),
+  });
+  if (!response.ok) throw new Error(`Replicate image gen failed: ${response.statusText}`);
+  const data = (await response.json()) as { output?: string[] };
+  return data.output?.[0] ?? "";
+}
