@@ -3,7 +3,6 @@ import { MsEdgeTTS, OUTPUT_FORMAT } from "msedge-tts";
 import * as fs from "fs";
 import * as path from "path";
 import * as os from "os";
-import Anthropic from "@anthropic-ai/sdk";
 import { COOKIE_NAME } from "../shared/const.js";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
@@ -11,6 +10,7 @@ import { publicProcedure, router } from "./_core/trpc";
 import { invokeLLM } from "./_core/llm";
 import { ENV } from "./_core/env";
 import { KORA_VEX_SYSTEM_PROMPT, getSystemPromptForMode } from "./vex-prompt";
+import { generateImage } from "./_core/imageGeneration";
 
 // Alien news headlines — Vex-style sarcastic takes
 export const ALIEN_HEADLINES = [
@@ -42,7 +42,7 @@ export const appRouter = router({
     }),
   }),
 
-  // Main chat endpoint — supports text and image vision via Claude
+  // Main chat endpoint — supports text and image vision via Moonshot
   chat: router({
     sendMessage: publicProcedure
       .input(
@@ -96,7 +96,7 @@ export const appRouter = router({
         return { content };
       }),
 
-    // Receive base64 image from app, pass to Claude vision directly (no S3 needed)
+    // Receive base64 image from app, pass to Moonshot vision directly
     uploadImage: publicProcedure
       .input(
         z.object({
@@ -105,12 +105,12 @@ export const appRouter = router({
         })
       )
       .mutation(async ({ input }) => {
-        // Return as a data URL — Claude vision can handle it directly
+        // Return as a data URL — Moonshot vision can handle it directly
         const dataUrl = `data:${input.mimeType};base64,${input.base64}`;
         return { url: dataUrl };
       }),
 
-    // Transcribe voice using Anthropic's Whisper-compatible endpoint
+    // Voice transcription — disabled (no Whisper configured yet)
     transcribeVoice: publicProcedure
       .input(
         z.object({
@@ -118,17 +118,8 @@ export const appRouter = router({
           mimeType: z.string().default("audio/m4a"),
         })
       )
-      .mutation(async ({ input }) => {
-        // Write audio to temp file and transcribe via Forge API (Whisper-compatible)
-        const ext = input.mimeType.includes("webm") ? "webm" : input.mimeType.includes("wav") ? "wav" : "m4a";
-        const tmpFile = path.join(os.tmpdir(), `vex-voice-${Date.now()}.${ext}`);
-        try {
-          fs.writeFileSync(tmpFile, Buffer.from(input.base64, "base64"));
-          const text = await transcribeWithForge(tmpFile, input.mimeType);
-          return { text };
-        } finally {
-          try { fs.unlinkSync(tmpFile); } catch {}
-        }
+      .mutation(async () => {
+        return { text: "[Voice transcription not configured. Text input only for now.]" };
       }),
 
     // Get rotating alien headlines
@@ -159,7 +150,7 @@ export const appRouter = router({
         }
       }),
 
-    // Upload a file and have Vex analyze its text content via Claude
+    // Upload a file and have Vex analyze its text content
     uploadFile: publicProcedure
       .input(
         z.object({
@@ -176,12 +167,12 @@ export const appRouter = router({
         if (input.mimeType === "text/plain" || ext === "txt" || ext === "md" || ext === "csv") {
           textContent = buffer.toString("utf-8").slice(0, 8000);
         }
-        // Return data URL so Claude can analyze images directly
+        // Return data URL so Moonshot can analyze images directly
         const url = `data:${input.mimeType};base64,${input.base64.slice(0, 100)}...`;
         return { url, textContent, fileName: input.fileName };
       }),
 
-    // AI Image Generation — uses built-in Forge image generation service
+    // AI Image Generation — uses Replicate (Flux Schnell)
     generateImage: publicProcedure
       .input(
         z.object({
@@ -191,68 +182,10 @@ export const appRouter = router({
       )
       .mutation(async ({ input }) => {
         const fullPrompt = `${input.prompt}, ${input.style}`;
-        try {
-          const result = await generateImageWithForge(fullPrompt);
-          return { url: result.url ?? "" };
-        } catch (err) {
-          // If Replicate key is available as fallback, use it
-          if (process.env.REPLICATE_API_KEY) {
-            const url = await generateWithReplicate(fullPrompt);
-            return { url };
-          }
-          throw err;
-        }
+        const result = await generateImage({ prompt: fullPrompt });
+        return { url: result.url ?? "" };
       }),
   }),
 });
 
 export type AppRouter = typeof appRouter;
-
-// ─── Helpers ────────────────────────────────────────────────────────────────
-
-async function transcribeWithForge(filePath: string, mimeType: string): Promise<string> {
-  const forgeApiUrl = process.env.BUILT_IN_FORGE_API_URL;
-  const forgeApiKey = process.env.BUILT_IN_FORGE_API_KEY;
-  if (!forgeApiUrl || !forgeApiKey) {
-    throw new Error("Voice transcription service not configured");
-  }
-  const FormData = (await import("form-data")).default;
-  const form = new FormData();
-  const ext = mimeType.split("/")[1] || "m4a";
-  form.append("file", fs.createReadStream(filePath), {
-    filename: `audio.${ext}`,
-    contentType: mimeType,
-  });
-  form.append("model", "whisper-1");
-  const baseUrl = forgeApiUrl.endsWith("/") ? forgeApiUrl : `${forgeApiUrl}/`;
-  const fullUrl = `${baseUrl}v1/audio/transcriptions`;
-  const response = await fetch(fullUrl, {
-    method: "POST",
-    headers: { Authorization: `Bearer ${forgeApiKey}`, ...form.getHeaders() },
-    body: form as any,
-  });
-  if (!response.ok) throw new Error(`Voice transcription failed: ${response.statusText}`);
-  const data = (await response.json()) as { text: string };
-  return data.text;
-}
-
-async function generateImageWithForge(prompt: string): Promise<{ url?: string }> {
-  const { generateImage: forgeGenerate } = await import("./_core/imageGeneration");
-  return forgeGenerate({ prompt });
-}
-
-async function generateWithReplicate(prompt: string): Promise<string> {
-  const apiKey = process.env.REPLICATE_API_KEY;
-  const response = await fetch("https://api.replicate.com/v1/models/black-forest-labs/flux-schnell/predictions", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-      Prefer: "wait",
-    },
-    body: JSON.stringify({ input: { prompt, num_outputs: 1, output_format: "webp" } }),
-  });
-  if (!response.ok) throw new Error(`Replicate image gen failed: ${response.statusText}`);
-  const data = (await response.json()) as { output?: string[] };
-  return data.output?.[0] ?? "";
-}

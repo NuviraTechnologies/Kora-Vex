@@ -177,11 +177,15 @@ function MessageBubble({
   onSpeak,
   isSpeaking,
   onCopy,
+  onShare,
+  onDelete,
 }: {
   message: Message;
   onSpeak: (text: string) => void;
   isSpeaking: boolean;
   onCopy: (text: string) => void;
+  onShare: (text: string) => void;
+  onDelete: (id: string) => void;
 }) {
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(12)).current;
@@ -255,6 +259,18 @@ function MessageBubble({
                 <Text style={styles.actionBtnText}>{isSpeaking ? "⏹ Stop" : "🔊 Speak"}</Text>
               </Pressable>
             )}
+            <Pressable
+              style={({ pressed }) => [styles.actionBtn, pressed && { opacity: 0.6 }]}
+              onPress={() => { onShare(message.content); setShowActions(false); }}
+            >
+              <Text style={styles.actionBtnText}>📤 Share</Text>
+            </Pressable>
+            <Pressable
+              style={({ pressed }) => [styles.actionBtn, styles.actionBtnDanger, pressed && { opacity: 0.6 }]}
+              onPress={() => { onDelete(message.id); setShowActions(false); }}
+            >
+              <Text style={styles.actionBtnText}>🗑 Delete</Text>
+            </Pressable>
             <Text style={styles.timestampText}>{timeStr}</Text>
           </View>
         )}
@@ -373,8 +389,16 @@ export default function ChatScreen() {
   const [isRecording, setIsRecording] = useState(false);
   const [isTranscribing, setIsTranscribing] = useState(false);
   const [headlines, setHeadlines] = useState<string[]>([]);
-  const [showScrollBtn, setShowScrollBtn] = useState(false);
-  const [inputHeight, setInputHeight] = useState(44);
+  // Animate scroll-to-bottom button
+  useEffect(() => {
+    Animated.timing(scrollBtnAnim, {
+      toValue: showScrollBtn ? 1 : 0,
+      duration: 220,
+      useNativeDriver: true,
+    }).start();
+  }, [showScrollBtn]);
+  const [isOffline, setIsOffline] = useState(false);
+  const scrollBtnAnim = useRef(new Animated.Value(0)).current;
   const flatListRef = useRef<FlatList>(null);
   const inputRef = useRef<TextInput>(null);
   const { coins, streak, addCoins, lastEarnReason } = useVexCoins();
@@ -692,6 +716,20 @@ export default function ChatScreen() {
     }
   }, [recorderState.isRecording, audioRecorder, haptic]);
 
+  const shareSingleMessage = useCallback(async (text: string) => {
+    haptic();
+    await Share.share({
+      message: `Kora Vex says:\n\n${text}\n\n— Shared from Kora Vex App`,
+    });
+  }, [haptic]);
+
+  const deleteMessage = useCallback(async (id: string) => {
+    haptic(Haptics.ImpactFeedbackStyle.Medium);
+    const updated = messages.filter((m) => m.id !== id);
+    setMessages(updated);
+    await saveMessages(updated);
+  }, [haptic, messages, saveMessages]);
+
   const shareChat = useCallback(async () => {
     const text = messages
       .map((m) => `${m.role === "assistant" ? "Kora Vex" : "You"}: ${m.content}`)
@@ -773,6 +811,7 @@ export default function ChatScreen() {
     setInputHeight(44);
 
     let uploadedImageUrl: string | undefined;
+    const originalImageBase64 = pendingImageBase64;
 
     if (pendingImageBase64) {
       setIsUploadingImage(true);
@@ -845,13 +884,16 @@ export default function ChatScreen() {
       if (hapticsEnabled && Platform.OS !== "web") {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       }
+      setIsOffline(false);
 
       setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 100);
     } catch {
+      setIsOffline(true);
+      setLastFailedPayload({ text: userContent, imageUrl: uploadedImageUrl, imageBase64: originalImageBase64 ?? undefined });
       const errorMsg: Message = {
         id: (Date.now() + 1).toString(),
         role: "assistant",
-        content: "My communication array is experiencing interference. Probably your planet's terrible WiFi. Try again, human.",
+        content: "My communication array is experiencing interference. Probably your planet's terrible WiFi. Tap ↻ Retry below, human.",
         timestamp: Date.now(),
       };
       const finalMessages = [...updatedMessages, errorMsg];
@@ -861,6 +903,92 @@ export default function ChatScreen() {
       setIsLoading(false);
     }
   }, [inputText, isLoading, messages, chatMutation, saveMessages, haptic, currentMode, pendingImageBase64, uploadImageMutation, voiceEnabled, speakMessage, hapticsEnabled, addCoins]);
+
+  const retryLastMessage = useCallback(async () => {
+    if (!lastFailedPayload) return;
+    haptic(Haptics.ImpactFeedbackStyle.Medium);
+    setLastFailedPayload(null);
+    // Remove the error message
+    setMessages((prev) => {
+      const cleaned = prev.filter((m) => !m.content.includes("communication array is experiencing interference"));
+      return cleaned;
+    });
+    // Re-upload image if base64 exists but URL doesn't
+    let imageUrl = lastFailedPayload.imageUrl;
+    if (!imageUrl && lastFailedPayload.imageBase64) {
+      setIsUploadingImage(true);
+      try {
+        const result = await uploadImageMutation.mutateAsync({
+          base64: lastFailedPayload.imageBase64,
+          mimeType: "image/jpeg",
+        });
+        imageUrl = result.url;
+      } catch {
+        // failed again, keep undefined
+      } finally {
+        setIsUploadingImage(false);
+      }
+    }
+    const userContent = lastFailedPayload.text || (imageUrl ? "What do you see in this image?" : "");
+    const userMsg: Message = {
+      id: Date.now().toString(),
+      role: "user",
+      content: userContent,
+      timestamp: Date.now(),
+      imageUrl,
+    };
+    const updatedMessages = [...messages, userMsg];
+    setMessages(updatedMessages);
+    setIsLoading(true);
+    setShowScrollBtn(false);
+    setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 80);
+    try {
+      const history = updatedMessages.slice(-20).map((m) => ({
+        role: m.role as "user" | "assistant",
+        content: m.content,
+      }));
+      const response = await chatMutation.mutateAsync({
+        messages: history,
+        mode: currentMode,
+        imageUrl,
+      });
+      const vexMsg: Message = {
+        id: (Date.now() + 1).toString(),
+        role: "assistant",
+        content: response.content,
+        timestamp: Date.now(),
+      };
+      const finalMessages = [...updatedMessages, vexMsg];
+      setMessages(finalMessages);
+      await saveMessages(finalMessages);
+      const msgCount = finalMessages.filter((m) => m.role === "user").length;
+      if (msgCount === 5) addCoins(25, "+25 VEX Coins — 5 Messages!");
+      else if (msgCount === 10) addCoins(50, "+50 VEX Coins — 10 Messages!");
+      else if (msgCount === 25) addCoins(100, "+100 VEX Coins — Dedicated Human!");
+      else if (msgCount % 50 === 0) addCoins(200, "+200 VEX Coins — Legend Status!");
+      else addCoins(5);
+      if (voiceEnabled) speakMessage(response.content, vexMsg.id);
+      if (hapticsEnabled && Platform.OS !== "web") {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      }
+      setIsOffline(false);
+      setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 100);
+    } catch {
+      setIsOffline(true);
+      setLastFailedPayload({ text: userContent, imageUrl, imageBase64: lastFailedPayload.imageBase64 });
+      const errorMsg: Message = {
+        id: (Date.now() + 1).toString(),
+        role: "assistant",
+        content: "My communication array is experiencing interference. Probably your planet's terrible WiFi. Tap ↻ Retry below, human.",
+        timestamp: Date.now(),
+      };
+      const finalMessages = [...updatedMessages, errorMsg];
+      setMessages(finalMessages);
+      await saveMessages(finalMessages);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [lastFailedPayload, haptic, messages, chatMutation, saveMessages, currentMode, voiceEnabled, speakMessage, hapticsEnabled, addCoins, uploadImageMutation]);
 
   const switchMode = useCallback(async (mode: string) => {
     setCurrentMode(mode);
@@ -975,10 +1103,33 @@ export default function ChatScreen() {
       />
 
       {/* News Ticker */}
-      {headlines.length > 0 && <NewsTicker headlines={headlines} />}
+      {headlines.length > 0 ? (
+        <NewsTicker headlines={headlines} />
+      ) : (
+        <View style={styles.emptyTicker}>
+          <Text style={styles.emptyTickerText}>📡 No transmissions detected</Text>
+        </View>
+      )}
+
+      {/* Offline indicator */}
+      {isOffline && (
+        <View style={styles.offlineBar}>
+          <Text style={styles.offlineBarText}>⚠️ OFFLINE — Alien frequencies jammed</Text>
+        </View>
+      )}
 
       {/* Coin Toast */}
       {lastEarnReason && <CoinToast key={lastEarnReason + coins} reason={lastEarnReason} />}
+
+      {/* Retry floating pill */}
+      {lastFailedPayload && (
+        <Pressable
+          style={({ pressed }) => [styles.retryPill, pressed && { opacity: 0.8 }]}
+          onPress={retryLastMessage}
+        >
+          <Text style={styles.retryPillText}>↻ RETRY LAST MESSAGE</Text>
+        </Pressable>
+      )}
 
       {/* Chat area — fills remaining space, input stays above keyboard */}
       <KeyboardAvoidingView
@@ -996,6 +1147,8 @@ export default function ChatScreen() {
               onSpeak={(text) => speakMessage(text, item.id)}
               isSpeaking={speakingMsgId === item.id}
               onCopy={copyMessage}
+              onShare={shareSingleMessage}
+              onDelete={deleteMessage}
             />
           )}
           contentContainerStyle={styles.messageList}
@@ -1011,7 +1164,7 @@ export default function ChatScreen() {
             setShowScrollBtn(distFromBottom > 120);
           }}
           scrollEventThrottle={16}
-          removeClippedSubviews={false}
+          removeClippedSubviews={true}
           initialNumToRender={20}
           maxToRenderPerBatch={10}
           windowSize={10}
@@ -1020,7 +1173,18 @@ export default function ChatScreen() {
         />
 
         {/* Scroll to bottom */}
-        {showScrollBtn && (
+        <Animated.View
+          style={{
+            position: "absolute",
+            bottom: 90,
+            right: 16,
+            opacity: scrollBtnAnim,
+            transform: [{
+              translateY: scrollBtnAnim.interpolate({ inputRange: [0, 1], outputRange: [20, 0] }),
+            }],
+          }}
+          pointerEvents={showScrollBtn ? "auto" : "none"}
+        >
           <Pressable
             style={({ pressed }) => [styles.scrollBtn, pressed && { opacity: 0.7 }]}
             onPress={() => {
@@ -1030,7 +1194,7 @@ export default function ChatScreen() {
           >
             <Text style={styles.scrollBtnText}>↓</Text>
           </Pressable>
-        )}
+        </Animated.View>
 
         {/* Pending image preview */}
         {pendingImageUrl && (
@@ -1072,7 +1236,15 @@ export default function ChatScreen() {
           <View style={styles.inputWrapper}>
             <TextInput
               ref={inputRef}
-              style={[styles.input, { height: Math.max(44, Math.min(inputHeight, 100)) }]}
+              style={[
+                styles.input,
+                { height: Math.max(44, Math.min(inputHeight, 100)) },
+                inputText.length > 1425
+                  ? { borderColor: C.red }
+                  : inputText.length > 1200
+                  ? { borderColor: C.orange }
+                  : null,
+              ]}
               value={inputText}
               onChangeText={setInputText}
               onContentSizeChange={(e) => setInputHeight(e.nativeEvent.contentSize.height + 16)}
@@ -1088,7 +1260,7 @@ export default function ChatScreen() {
                 pressed && styles.sendButtonPressed,
                 ((!inputText.trim() && !pendingImageBase64) || isLoading) && styles.sendButtonDisabled,
               ]}
-              onPress={sendMessage}
+              onPress={() => { haptic(Haptics.ImpactFeedbackStyle.Medium); sendMessage(); }}
               disabled={(!inputText.trim() && !pendingImageBase64) || isLoading}
             >
               {isLoading ? (
@@ -1528,9 +1700,6 @@ const styles = StyleSheet.create({
 
   // Scroll to bottom
   scrollBtn: {
-    position: "absolute",
-    bottom: 90,
-    right: 16,
     backgroundColor: C.surface,
     borderWidth: 1.5,
     borderColor: C.neon,
@@ -1688,6 +1857,16 @@ const styles = StyleSheet.create({
   sendButtonDisabled: { opacity: 0.2, shadowOpacity: 0 },
   sendIcon: { color: C.black, fontSize: 17, fontWeight: "900" },
   charCount: { color: C.orange, fontSize: 10, fontFamily: MONO, textAlign: "right", marginTop: 4 },
+  // Retry pill
+  retryPill: { position: "absolute", top: 8, alignSelf: "center", backgroundColor: C.surface, borderWidth: 1.5, borderColor: C.orange, borderRadius: 20, paddingHorizontal: 16, paddingVertical: 8, zIndex: 200, shadowColor: C.orange, shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.4, shadowRadius: 8 },
+  retryPillText: { color: C.orange, fontSize: 11, fontWeight: "900", fontFamily: MONO, letterSpacing: 1 },
+  actionBtnDanger: { borderColor: "#FF3B30" },
+  // Offline bar
+  offlineBar: { flexDirection: "row", alignItems: "center", justifyContent: "center", backgroundColor: "#1a0a00", borderBottomWidth: 1, borderBottomColor: C.orange, paddingVertical: 6 },
+  offlineBarText: { color: C.orange, fontSize: 11, fontWeight: "800", fontFamily: MONO, letterSpacing: 1 },
+  // Empty ticker
+  emptyTicker: { flexDirection: "row", alignItems: "center", backgroundColor: C.surface, paddingVertical: 6, paddingHorizontal: 12, borderBottomWidth: 1, borderBottomColor: C.border },
+  emptyTickerText: { color: C.textDim, fontSize: 11, fontFamily: MONO, letterSpacing: 0.5 },
 
   // Mode modal
   modalOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.92)", justifyContent: "flex-end" },

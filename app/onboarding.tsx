@@ -12,6 +12,7 @@ import {
 import { router } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { StatusBar } from "expo-status-bar";
+import * as Haptics from "expo-haptics";
 
 const { width, height } = Dimensions.get("window");
 
@@ -19,7 +20,13 @@ const NEO_GREEN = "#00FF41";
 const GOLD = "#FFD700";
 
 const COSMIC_BG = "https://d2xsxph8kpxj0f.cloudfront.net/310519663467303048/KHyhVJjWGJuAogbSjvLteH/spaceship-bg-LWxcsaZVsX5si8soN8wURD.webp";
-const VEX_LOGO = "https://files.manuscdn.com/user_upload_by_module/session_file/310519663467303048/dHXXSRpjxNJOTpMX.webp";
+const VEX_LOGO = "https://d2xsxph8kpxj0f.cloudfront.net/310519663467303048/KHyhVJjWGJuAogbSjvLteH/vex-avatar-hud-PyS8T2DkRNEmQQvf2QUS7q.webp";
+
+const haptic = (style = Haptics.ImpactFeedbackStyle.Light) => {
+  if (Platform.OS !== "web") {
+    Haptics.impactAsync(style).catch(() => {});
+  }
+};
 
 const SLIDES = [
   {
@@ -181,7 +188,7 @@ export default function OnboardingScreen() {
             <Image source={{ uri: VEX_LOGO }} style={styles.topLogo} resizeMode="contain" />
           </View>
         </Animated.View>
-        <TouchableOpacity onPress={handleGetStarted} style={styles.skipButton}>
+        <TouchableOpacity onPress={() => { haptic(Haptics.ImpactFeedbackStyle.Medium); handleGetStarted(); }} style={styles.skipButton}>
           <Text style={styles.skipText}>SKIP</Text>
         </TouchableOpacity>
       </View>

@@ -1,8 +1,8 @@
 /**
- * LLM module — powered by Anthropic Claude directly.
- * No Manus credits required. Works independently forever.
+ * LLM module — powered by Moonshot Kimi API.
+ * No Manus credits. No Anthropic. Direct API.
  */
-import Anthropic from "@anthropic-ai/sdk";
+
 import { ENV } from "./env";
 
 export type Role = "system" | "user" | "assistant";
@@ -48,27 +48,23 @@ export type InvokeResult = {
   }>;
 };
 
-let _client: Anthropic | null = null;
-
-function getClient(): Anthropic {
-  if (!_client) {
-    if (!ENV.anthropicApiKey) {
-      throw new Error("ANTHROPIC_API_KEY is not configured. Set it in your environment variables.");
-    }
-    _client = new Anthropic({ apiKey: ENV.anthropicApiKey });
+function getApiKey(): string {
+  const key = ENV.moonshotApiKey || process.env.MOONSHOT_API_KEY || "";
+  if (!key) {
+    throw new Error("MOONSHOT_API_KEY is not configured. Set it in your environment variables.");
   }
-  return _client;
+  return key;
 }
 
 /**
- * Convert messages to Anthropic format, extracting system prompt.
+ * Convert messages to Moonshot (OpenAI-compatible) format.
  */
-function convertToAnthropicMessages(messages: Message[]): {
+function convertToMoonshotMessages(messages: Message[]): {
   system: string;
-  msgs: Anthropic.MessageParam[];
+  msgs: Array<{ role: "system" | "user" | "assistant"; content: string | Array<{ type: string; text?: string; image_url?: { url: string } }> }>;
 } {
   let system = "";
-  const msgs: Anthropic.MessageParam[] = [];
+  const msgs: Array<{ role: "system" | "user" | "assistant"; content: string | Array<{ type: string; text?: string; image_url?: { url: string } }> }> = [];
 
   for (const msg of messages) {
     if (msg.role === "system") {
@@ -79,30 +75,17 @@ function convertToAnthropicMessages(messages: Message[]): {
     if (typeof msg.content === "string") {
       msgs.push({ role: msg.role as "user" | "assistant", content: msg.content });
     } else if (Array.isArray(msg.content)) {
-      const blocks: Anthropic.ContentBlockParam[] = [];
-      for (const part of msg.content) {
-        if (typeof part === "string") {
-          blocks.push({ type: "text", text: part });
-        } else if (part.type === "text") {
-          blocks.push({ type: "text", text: part.text });
-        } else if (part.type === "image_url" && part.image_url?.url) {
-          const url = part.image_url.url;
-          if (url.startsWith("data:")) {
-            const [header, data] = url.split(",");
-            const mediaType = header.split(":")[1].split(";")[0] as
-              | "image/jpeg"
-              | "image/png"
-              | "image/gif"
-              | "image/webp";
-            blocks.push({ type: "image", source: { type: "base64", media_type: mediaType, data } });
-          } else {
-            blocks.push({ type: "image", source: { type: "url", url } });
-          }
+      const parts: Array<{ type: string; text?: string; image_url?: { url: string } }> = [];
+      for (const item of msg.content) {
+        if (typeof item === "string") {
+          parts.push({ type: "text", text: item });
+        } else if (item.type === "text") {
+          parts.push({ type: "text", text: item.text });
+        } else if (item.type === "image_url" && item.image_url?.url) {
+          parts.push({ type: "image_url", image_url: { url: item.image_url.url } });
         }
       }
-      if (blocks.length > 0) {
-        msgs.push({ role: msg.role as "user" | "assistant", content: blocks });
-      }
+      msgs.push({ role: msg.role as "user" | "assistant", content: parts });
     }
   }
 
@@ -110,32 +93,53 @@ function convertToAnthropicMessages(messages: Message[]): {
 }
 
 export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
-  const client = getClient();
-  const { system, msgs } = convertToAnthropicMessages(params.messages);
+  const apiKey = getApiKey();
+  const { system, msgs } = convertToMoonshotMessages(params.messages);
   const maxTokens = params.max_tokens ?? params.maxTokens ?? 2048;
 
-  const response = await client.messages.create({
-    model: params.model ?? "claude-opus-4-5",
-    max_tokens: maxTokens,
-    ...(system ? { system } : {}),
-    messages: msgs,
+  const allMessages = system ? [{ role: "system" as const, content: system }, ...msgs] : msgs;
+
+  const response = await fetch("https://api.moonshot.ai/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      model: params.model ?? "moonshot-v1-8k",
+      messages: allMessages,
+      max_tokens: maxTokens,
+      temperature: 0.7,
+    }),
   });
 
-  const textContent = response.content
-    .filter((b): b is Anthropic.TextBlock => b.type === "text")
-    .map((b) => b.text)
-    .join("");
+  if (!response.ok) {
+    const detail = await response.text().catch(() => "");
+    throw new Error(`Moonshot API request failed (${response.status}): ${detail}`);
+  }
+
+  const data = (await response.json()) as {
+    id: string;
+    created: number;
+    model: string;
+    choices: Array<{
+      index: number;
+      message: { role: string; content: string };
+      finish_reason: string | null;
+    }>;
+  };
 
   return {
-    id: response.id,
-    created: Date.now(),
-    model: response.model,
-    choices: [
-      {
-        index: 0,
-        message: { role: "assistant", content: textContent },
-        finish_reason: response.stop_reason ?? null,
+    id: data.id,
+    created: data.created,
+    model: data.model,
+    choices: data.choices.map((c) => ({
+      index: c.index,
+      message: {
+        role: c.message.role as Role,
+        content: c.message.content,
       },
-    ],
+      finish_reason: c.finish_reason,
+    })),
   };
 }

@@ -1,5 +1,5 @@
-// Preconfigured storage helpers for Manus WebDev templates
-// Uses the Biz-provided storage proxy (Authorization: Bearer <token>)
+// Storage helpers — disabled. Previously used platform storage proxy.
+// Re-implement with direct S3/CloudFront or other storage as needed.
 
 import { ENV } from "./_core/env";
 
@@ -11,7 +11,7 @@ function getStorageConfig(): StorageConfig {
 
   if (!baseUrl || !apiKey) {
     throw new Error(
-      "Storage proxy credentials missing: set BUILT_IN_FORGE_API_URL and BUILT_IN_FORGE_API_KEY",
+      "Storage credentials missing: set STORAGE_ENDPOINT and STORAGE_KEY",
     );
   }
 

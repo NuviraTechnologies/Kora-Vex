@@ -1,13 +1,13 @@
 // Kora Vex Brand Assets — CDN URLs
-// All images uploaded to CDN for use throughout the app UI
+// All images hosted on CloudFront for use throughout the app UI
 // v4.0: Unified cosmic/spaceship character set — consistent Vex look across all images
 
 export const VEX_ASSETS = {
   // Main logo — alien head with gaming headset (neon green on black) — PRIMARY BRAND ICON
-  logo: "https://files.manuscdn.com/user_upload_by_module/session_file/310519663467303048/dHXXSRpjxNJOTpMX.webp",
+  logo: "https://d2xsxph8kpxj0f.cloudfront.net/310519663467303048/KHyhVJjWGJuAogbSjvLteH/vex-avatar-hud-PyS8T2DkRNEmQQvf2QUS7q.webp",
 
   // VEX Coin — circular coin with alien headset logo
-  coin: "https://files.manuscdn.com/user_upload_by_module/session_file/310519663467303048/DEHBNVUQKeOJMCUl.jpeg",
+  coin: "https://d2xsxph8kpxj0f.cloudfront.net/310519663467303048/KHyhVJjWGJuAogbSjvLteH/vex-coin-placeholder.webp",
 
   // === COSMIC SPACESHIP SERIES (v4.0) — Consistent character, all in spacecraft ===
 
@@ -31,8 +31,8 @@ export const VEX_ASSETS = {
 
   // === LEGACY COSMIC (kept for reference) ===
   // Side profile looking up at stars — dramatic, cinematic
-  sideProfile: "https://files.manuscdn.com/user_upload_by_module/session_file/310519663467303048/wNUUohlJZyKyvILt.png",
+  sideProfile: "https://d2xsxph8kpxj0f.cloudfront.net/310519663467303048/KHyhVJjWGJuAogbSjvLteH/vex-side-profile.webp",
 
   // Back view looking at Milky Way — cosmic, mysterious
-  backCosmic: "https://files.manuscdn.com/user_upload_by_module/session_file/310519663467303048/ShvvWzWWIQYyVJka.png",
+  backCosmic: "https://d2xsxph8kpxj0f.cloudfront.net/310519663467303048/KHyhVJjWGJuAogbSjvLteH/vex-back-cosmic.webp",
 } as const;

@@ -9,7 +9,7 @@
       "client_info": {
         "mobilesdk_app_id": "1:123456789:android:abcdef1234567890",
         "android_client_info": {
-          "package_name": "space.manus.kora.vex.t20260328044653"
+          "package_name": "com.nuvira.kora.vex"
         }
       },
       "oauth_client": [],

@@ -345,6 +345,52 @@ export default function SettingsScreen() {
           </View>
         </View>
 
+        {/* Growth & Feedback section */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>🚀 GROWTH</Text>
+          </View>
+          <View style={styles.sectionCard}>
+            <ActionRow
+              label="Rate Kora Vex"
+              subtitle="Help others discover this alien"
+              emoji="⭐"
+              onPress={() => {
+                haptic();
+                Alert.alert(
+                  "Enjoying Kora Vex?",
+                  "If this alien has entertained or enlightened you, leaving a rating helps other humans find him. Your feedback reaches the Zeta Reticuli council.",
+                  [
+                    { text: "Not Now", style: "cancel" },
+                    { text: "Rate 5 Stars", onPress: () => {
+                      Alert.alert("Thanks, human", "Your rating has been noted by the Galactic Council. Vex is... moderately grateful.");
+                    }},
+                  ]
+                );
+              }}
+            />
+            <View style={styles.rowDivider} />
+            <ActionRow
+              label="Send Feedback"
+              subtitle="Report bugs or suggest features"
+              emoji="📡"
+              onPress={() => {
+                haptic();
+                Alert.alert(
+                  "Transmit to Vex",
+                  "Found a bug? Have an idea? Vex reads every transmission — usually while rolling his enormous eyes.",
+                  [
+                    { text: "Cancel", style: "cancel" },
+                    { text: "Open Email", onPress: () => {
+                      Alert.alert("Email", "Send feedback to: ihavebooks@richardvigslist.com");
+                    }},
+                  ]
+                );
+              }}
+            />
+          </View>
+        </View>
+
         {/* Legal section */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
@@ -384,7 +430,7 @@ export default function SettingsScreen() {
             <View style={styles.rowDivider} />
             <View style={styles.aboutRow}>
               <Text style={styles.aboutLabel}>AI Model</Text>
-              <Text style={styles.aboutValue}>Gemini 2.5 Flash</Text>
+              <Text style={styles.aboutValue}>Moonshot v1-auto</Text>
             </View>
             <View style={styles.rowDivider} />
             <View style={styles.aboutRow}>

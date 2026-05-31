@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import {
   View,
   Text,
@@ -11,6 +11,7 @@ import {
   Animated,
   Platform,
   ImageBackground,
+  TextInput,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -188,16 +189,20 @@ const CATEGORIES = [
   { key: "genx", label: "VEX HISTORY", emoji: "📺" },
 ];
 
-function LoreCardItem({ card, onPress }: { card: LoreCard; onPress: (card: LoreCard) => void }) {
+function LoreCardItem({ card, onPress, index }: { card: LoreCard; onPress: (card: LoreCard) => void; index: number }) {
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(20)).current;
 
   useEffect(() => {
-    Animated.parallel([
-      Animated.timing(fadeAnim, { toValue: 1, duration: 350, useNativeDriver: true }),
-      Animated.timing(slideAnim, { toValue: 0, duration: 350, useNativeDriver: true }),
-    ]).start();
-  }, []);
+    const delay = index * 80;
+    const timer = setTimeout(() => {
+      Animated.parallel([
+        Animated.timing(fadeAnim, { toValue: 1, duration: 350, useNativeDriver: true }),
+        Animated.timing(slideAnim, { toValue: 0, duration: 350, useNativeDriver: true }),
+      ]).start();
+    }, delay);
+    return () => clearTimeout(timer);
+  }, [index]);
 
   return (
     <Animated.View style={{ opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}>
@@ -247,10 +252,33 @@ function LoreCardItem({ card, onPress }: { card: LoreCard; onPress: (card: LoreC
 
 export default function LoreScreen() {
   const insets = useSafeAreaInsets();
+  const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedCard, setSelectedCard] = useState<LoreCard | null>(null);
+  const searchAnim = useRef(new Animated.Value(0)).current;
 
-  const filtered = selectedCategory === "all" ? LORE_DATA : LORE_DATA.filter((c) => c.category === selectedCategory);
+  useEffect(() => {
+    Animated.timing(searchAnim, {
+      toValue: searchQuery.length > 0 ? 1 : 0,
+      duration: 200,
+      useNativeDriver: false,
+    }).start();
+  }, [searchQuery]);
+
+  const filtered = useMemo(() => {
+    let results = selectedCategory === "all" ? LORE_DATA : LORE_DATA.filter((c) => c.category === selectedCategory);
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      results = results.filter(
+        (c) =>
+          c.title.toLowerCase().includes(q) ||
+          c.summary.toLowerCase().includes(q) ||
+          c.vexComment.toLowerCase().includes(q) ||
+          c.detail.toLowerCase().includes(q)
+      );
+    }
+    return results;
+  }, [selectedCategory, searchQuery]);
 
   return (
     <ImageBackground
@@ -275,6 +303,28 @@ export default function LoreScreen() {
 
       <LinearGradient colors={["transparent", C.neon, "transparent"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.neonDivider} />
 
+      {/* Search bar */}
+      <View style={styles.searchBarWrap}>
+        <Text style={styles.searchIcon}>🔍</Text>
+        <TextInput
+          style={styles.searchInput}
+          placeholder="Search alien races, UFO events, conspiracies..."
+          placeholderTextColor="#446644"
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+          maxLength={60}
+          returnKeyType="search"
+        />
+        {searchQuery.length > 0 && (
+          <Pressable
+            style={({ pressed }) => [styles.searchClear, pressed && { opacity: 0.5 }]}
+            onPress={() => { setSearchQuery(""); if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
+          >
+            <Text style={styles.searchClearText}>✕</Text>
+          </Pressable>
+        )}
+      </View>
+
       {/* Category filter */}
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterRow} contentContainerStyle={styles.filterContent}>
         {CATEGORIES.map((cat) => (
@@ -295,9 +345,23 @@ export default function LoreScreen() {
       <FlatList
         data={filtered}
         keyExtractor={(item) => item.id}
-        renderItem={({ item }) => <LoreCardItem card={item} onPress={setSelectedCard} />}
-        contentContainerStyle={styles.listContent}
+        renderItem={({ item, index }) => <LoreCardItem card={item} onPress={setSelectedCard} index={index} />}
+        contentContainerStyle={[
+          styles.listContent,
+          filtered.length === 0 && { flex: 1, justifyContent: "center", alignItems: "center" },
+        ]}
         showsVerticalScrollIndicator={false}
+        ListEmptyComponent={
+          <View style={styles.emptyState}>
+            <Text style={styles.emptyEmoji}>🌌</Text>
+            <Text style={styles.emptyTitle}>No signals detected</Text>
+            <Text style={styles.emptySubtitle}>
+              {searchQuery
+                ? `No lore matches "${searchQuery}". Try a broader search or switch categories.`
+                : "This category is empty. Try another filter."}
+            </Text>
+          </View>
+        }
       />
 
       {/* Detail modal */}
@@ -419,4 +483,15 @@ const styles = StyleSheet.create({
   askVexBtnText: { color: C.black, fontSize: 14, fontWeight: "900", fontFamily: MONO, letterSpacing: 2 },
   closeBtn: { backgroundColor: C.surface, borderWidth: 1, borderColor: C.border, borderRadius: 14, paddingVertical: 14, alignItems: "center" },
   closeBtnText: { color: C.textMid, fontSize: 12, fontWeight: "700", fontFamily: MONO, letterSpacing: 2 },
+  // Search bar
+  searchBarWrap: { flexDirection: "row", alignItems: "center", backgroundColor: C.surface, borderWidth: 1, borderColor: C.border, borderRadius: 14, marginHorizontal: 14, marginVertical: 10, paddingHorizontal: 12, paddingVertical: 8, gap: 8 },
+  searchIcon: { fontSize: 14, opacity: 0.6 },
+  searchInput: { flex: 1, color: C.bodyText, fontSize: 13, fontFamily: MONO, paddingVertical: 2 },
+  searchClear: { width: 24, height: 24, borderRadius: 12, backgroundColor: C.surfaceHigh, borderWidth: 1, borderColor: C.border, alignItems: "center", justifyContent: "center" },
+  searchClearText: { color: C.textMid, fontSize: 10, fontWeight: "700" },
+  // Empty state
+  emptyState: { alignItems: "center", paddingHorizontal: 40, paddingVertical: 60 },
+  emptyEmoji: { fontSize: 48, marginBottom: 16, opacity: 0.7 },
+  emptyTitle: { color: C.neon, fontSize: 16, fontWeight: "900", fontFamily: MONO, letterSpacing: 2, marginBottom: 8 },
+  emptySubtitle: { color: C.textDim, fontSize: 13, fontFamily: MONO, textAlign: "center", lineHeight: 20 },
 });
