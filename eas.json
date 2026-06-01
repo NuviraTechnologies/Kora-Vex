@@ -35,6 +35,9 @@
   "submit": {
     "production": {
       "ios": {
+        "ascApiKeyPath": "./AuthKey_8FGDWNNGNZ.p8",
+        "ascApiKeyIssuerId": "64UWZMTBQL",
+        "ascApiKeyId": "8FGDWNNGNZ",
         "appleTeamId": "39QM64X4Y6",
         "ascAppId": "6761310959"
       }
